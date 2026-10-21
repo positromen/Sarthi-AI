@@ -1,10 +1,84 @@
 @import "tailwindcss";
 
+/* Sarthi design system (Sarthi UI Design System.zip → Foundations). Green on near-black, kept quiet: leaf is reserved
+   for the one primary action, live status and the interviewer, so the answer text is the brightest thing on screen. */
 @theme {
-  --color-leaf: #4ade80;
   --color-ink: #0b0f0c;
+  --color-sidebar: #0e1310;
   --color-panel: #121814;
+  --color-raised: #182019;
+  --color-hover: #1c251e;
+  --color-selected: #1f2a22;
   --color-line: #233027;
+  --color-line-strong: #2f3d33;
+
+  --color-fg: #e7efe9;
+  --color-fg-answer: #eef4f0;
+  --color-fg-soft: #c9d4cc;
+  --color-fg-2: #a9b8ad;
+  --color-fg-muted: #8a9a8f;
+  --color-fg-3: #7a8a7f;
+  --color-fg-disabled: #5c6b61;
+
+  --color-leaf: #4ade80;
+  --color-leaf-hover: #6ee7a0;
+  --color-leaf-soft: #86efac;
+  --color-leaf-busy: #3bb56a;
+  --color-you: #7dd3fc;
+  --color-warn: #fcd34d;
+  --color-warn-soft: #fde68a;
+  --color-danger: #fca5a5;
+  --color-danger-soft: #fecaca;
+  --color-danger-solid: #f87171;
+
+  /* Nirmala UI ships with Windows and covers Devanagari (Hindi, Marathi). */
+  --font-sans: "Segoe UI", "Nirmala UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --font-math: "Cambria Math", Cambria, "Times New Roman", serif;
+
+  --radius-key: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-panel: 10px;
+  --radius-card: 12px;
+
+  --shadow-card: 0 18px 40px -10px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-menu: 0 14px 32px rgba(0, 0, 0, 0.5);
+  --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  --animate-caret: caret 1s steps(2) infinite;
+  --animate-sweep: sweep 1.6s ease-in-out infinite;
+  --animate-fade-in: fade-in 200ms ease-out;
+  --animate-spin: spin 0.8s linear infinite;
+
+  @keyframes caret {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(360%); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Keyboard focus only: a 2 px gap in the surface colour, then 2 px of leaf at 70%. */
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--ring-gap, var(--color-panel)), 0 0 0 4px rgba(74, 222, 128, 0.7);
+  }
+}
+
+/* Danger controls use a red ring instead. */
+@utility focus-ring-danger {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--ring-gap, var(--color-panel)), 0 0 0 4px rgba(248, 113, 113, 0.7);
+  }
 }
 
 html,
@@ -17,11 +91,22 @@ body,
 .overlay-body {
   background: transparent;
   overflow: hidden;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 .settings-body {
   background: var(--color-ink);
-  color: #e7efe9;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+}
+
+/* Reduced motion: transitions drop to 0 ms, the caret stops blinking and the thinking sweep becomes a static bar.
+   Counters (e.g. thinking seconds) keep ticking; they are text, not animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation: none !important;
+  }
 }
