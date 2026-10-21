@@ -36,6 +36,8 @@ const api = {
     ipcRenderer.send(IPC.setOverlayInteractive, interactive),
   /** The overlay only takes keyboard focus while the ask box is in use; resolves once main has applied it. */
   setOverlayFocusable: (focusable: boolean): Promise<void> => ipcRenderer.invoke(IPC.setOverlayFocusable, focusable),
+  /** Header pressed / released: main moves the overlay with the cursor in between. */
+  overlayDrag: (phase: 'start' | 'end') => ipcRenderer.send(IPC.overlayDrag, phase),
   /** Opens the Control Center, optionally on a page ("setup", "history", …). */
   openSettings: (page?: string) => ipcRenderer.send(IPC.openSettings, page),
   onNavigate: (callback: (page: string) => void) => subscribe(IPC.navigate, callback),

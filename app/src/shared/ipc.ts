@@ -6,6 +6,7 @@ export const IPC = {
   setKey: 'keys:set',
   setOverlayInteractive: 'overlay:set-interactive',
   setOverlayFocusable: 'overlay:set-focusable',
+  overlayDrag: 'overlay:drag',
   openSettings: 'window:open-settings',
   hotkey: 'hotkey:pressed',
   startSession: 'session:start',

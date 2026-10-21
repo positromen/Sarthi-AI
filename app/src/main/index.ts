@@ -16,12 +16,14 @@ import { validateKey } from './validate-keys'
 import {
   applyPrivacy,
   broadcast,
+  endOverlayDrag,
   onPrivacyChange,
   createOverlayWindow,
   openSettingsWindow,
   setOverlayFocusable,
   setOverlayInteractive,
-  showOverlay
+  showOverlay,
+  startOverlayDrag
 } from './windows'
 
 if (!app.requestSingleInstanceLock()) app.quit()
@@ -107,6 +109,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))
+  ipcMain.on(IPC.overlayDrag, (_e, phase: unknown) => (phase === 'start' ? startOverlayDrag() : endOverlayDrag()))
   ipcMain.handle(IPC.setOverlayFocusable, (_e, focusable: unknown) => setOverlayFocusable(focusable === true))
   ipcMain.on(IPC.openSettings, (_e, page?: unknown) => openSettingsWindow(typeof page === 'string' ? page : undefined))
   ipcMain.on(IPC.showOverlay, () => showOverlay())

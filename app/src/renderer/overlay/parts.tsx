@@ -1,6 +1,6 @@
 // The overlay card's sections (Sarthi UI design, states A1–A16). Everything clickable lives inside the card: the
 // window ignores the mouse elsewhere, so nothing here may float outside it.
-import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type PointerEvent, type ReactNode, type RefObject } from 'react'
 import type { AnswerState, ApiKeyName, ListeningStatus, ScreenshotInfo, Speaker, TranscriptTurn } from '../../shared/types'
 import type { AudioLevels } from '../audio/capture'
 import { keysFor, shortcutLabel, shortcuts } from '../shortcuts'
@@ -14,6 +14,17 @@ const PILL_LABEL: Record<ListeningStatus, string> = {
   connecting: 'Connecting',
   listening: 'Listening',
   error: 'Error'
+}
+
+// Press an empty part of a header to move the overlay (main follows the cursor until release); buttons keep working.
+const dragHandlers = {
+  onPointerDown: (e: PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || (e.target as Element).closest('button, input, a, label')) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    window.sarthi.overlayDrag('start')
+  },
+  onPointerUp: () => window.sarthi.overlayDrag('end'),
+  onLostPointerCapture: () => window.sarthi.overlayDrag('end')
 }
 
 // ── Header ──────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -44,7 +55,7 @@ export function Header({
   onToggleSheet: () => void
 }) {
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2 border-b border-line pr-2 pl-3">
+    <div {...dragHandlers} className="flex h-11 shrink-0 cursor-grab items-center gap-2 border-b border-line pr-2 pl-3 select-none active:cursor-grabbing">
       <Logo size={16} />
       <span className="text-[13px] font-semibold tracking-[.01em]">Sarthi</span>
       <span className="ml-1">
@@ -100,7 +111,7 @@ export function Header({
 export function CompactHeader({ status, question, onExpand }: { status: ListeningStatus; question: string | null; onExpand: () => void }) {
   const dot = { idle: 'bg-fg-3', connecting: 'bg-warn', listening: 'bg-leaf', error: 'bg-danger' }[status]
   return (
-    <div className="flex h-[34px] shrink-0 items-center gap-2 border-b border-hover pr-1.5 pl-3">
+    <div {...dragHandlers} className="flex h-[34px] shrink-0 cursor-grab items-center gap-2 border-b border-hover pr-1.5 pl-3 select-none active:cursor-grabbing">
       <Logo size={14} />
       <span className={`size-1.5 shrink-0 rounded-full ${dot}`} />
       <span className="min-w-0 flex-1 truncate text-xs text-fg-muted">{question ? `Q · ${question}` : 'Waiting for a question'}</span>

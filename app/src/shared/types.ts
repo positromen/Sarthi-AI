@@ -1,4 +1,5 @@
 import { DEFAULT_HOTKEYS, mergeHotkeys, type HotkeyMap } from './hotkeys'
+import type { Point } from './overlayPosition'
 
 /** Which model writes answers. Anthropic is listed for later but not wired; it behaves like Gemini. */
 export type LlmProvider = 'gemini' | 'groq' | 'anthropic'
@@ -28,6 +29,8 @@ export interface Settings {
   overlayOpacity: number
   /** Answer-only overlay: a one-line question header and the answer, nothing else. */
   overlayCompact: boolean
+  /** Where the user last left the overlay (null = default top-right); restored only if still on a display. */
+  overlayPosition: Point | null
   /** Allow screenshots (hotkey, overlay button) and send them with answers. */
   screenshotsEnabled: boolean
   /** First-run onboarding finished (or skipped because keys were already set up). */
@@ -55,6 +58,7 @@ export const DEFAULT_SETTINGS: Settings = {
   useFillerWords: false,
   overlayOpacity: 0.92,
   overlayCompact: false,
+  overlayPosition: null,
   screenshotsEnabled: true,
   onboarded: false,
   hotkeys: DEFAULT_HOTKEYS,
@@ -67,7 +71,10 @@ export const DEFAULT_SETTINGS: Settings = {
 export function withDefaults(stored: Record<string, unknown>): Settings {
   const { transcriptionLanguage, ...rest } = stored
   const upgraded = typeof transcriptionLanguage === 'string' ? { listeningLanguage: transcriptionLanguage, ...rest } : rest
-  return { ...DEFAULT_SETTINGS, ...upgraded, hotkeys: mergeHotkeys(rest.hotkeys) } as Settings
+  const position = rest.overlayPosition as Partial<Point> | null | undefined
+  const overlayPosition =
+    position && Number.isFinite(position.x) && Number.isFinite(position.y) ? { x: position.x!, y: position.y! } : null
+  return { ...DEFAULT_SETTINGS, ...upgraded, hotkeys: mergeHotkeys(rest.hotkeys), overlayPosition } as Settings
 }
 
 /** Hotkey events forwarded from main to the overlay (content actions; window actions are handled in main). */

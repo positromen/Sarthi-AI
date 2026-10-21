@@ -1,12 +1,12 @@
 import { app, BrowserWindow, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
-import { getSettings } from './store'
+import { clampToWorkArea, restoreOverlayPosition } from '../shared/overlayPosition'
+import { getSettings, updateSettings } from './store'
 import { controlCenterInTaskbar } from './trayModel'
 
 const OVERLAY_WIDTH = 520
 const OVERLAY_HEIGHT = 640
-const MARGIN = 24
 const MOVE_STEP = 40
 
 let overlay: BrowserWindow | null = null
@@ -28,13 +28,31 @@ export function getOverlay(): BrowserWindow | null {
   return overlay && !overlay.isDestroyed() ? overlay : null
 }
 
+const OVERLAY_SIZE = { width: OVERLAY_WIDTH, height: OVERLAY_HEIGHT }
+// Window moves arrive as a stream while dragging; save once it settles.
+const SAVE_POSITION_DELAY_MS = 400
+let savePositionTimer: NodeJS.Timeout | null = null
+
+function rememberOverlayPosition(win: BrowserWindow): void {
+  if (savePositionTimer) clearTimeout(savePositionTimer)
+  savePositionTimer = setTimeout(() => {
+    if (win.isDestroyed()) return
+    const [x, y] = win.getPosition()
+    updateSettings({ overlayPosition: { x, y } })
+  }, SAVE_POSITION_DELAY_MS)
+}
+
 export function createOverlayWindow(): BrowserWindow {
-  const { workArea } = screen.getPrimaryDisplay()
+  const position = restoreOverlayPosition(
+    getSettings().overlayPosition,
+    screen.getAllDisplays().map((display) => display.workArea),
+    screen.getPrimaryDisplay().workArea,
+    OVERLAY_SIZE
+  )
   overlay = new BrowserWindow({
     width: OVERLAY_WIDTH,
     height: OVERLAY_HEIGHT,
-    x: workArea.x + workArea.width - OVERLAY_WIDTH - MARGIN,
-    y: workArea.y + MARGIN,
+    ...position,
     transparent: true,
     frame: false,
     hasShadow: false,
@@ -56,6 +74,10 @@ export function createOverlayWindow(): BrowserWindow {
     if (win) win.setAlwaysOnTop(true, 'screen-saver', 1)
     else clearInterval(topmostTimer)
   }, 1000)
+
+  // Dragging by the header (CSS app-region) and Ctrl+Alt+arrows both end up here.
+  const created = overlay
+  overlay.on('move', () => rememberOverlayPosition(created))
 
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   overlay.setIgnoreMouseEvents(true, { forward: true })
@@ -131,11 +153,48 @@ export function setOverlayFocusable(focusable: boolean): void {
 /** The "type a question" hotkey: focus the overlay so its ask box can take the keystrokes. */
 export const focusOverlay = (): void => setOverlayFocusable(true)
 
+// Dragging is driven from main: the renderer only says "pressed" and "released" on the header, and main follows the
+// cursor in between. A CSS drag region would make the card fire mouseleave (it counts as window frame), which turns
+// click-through back on mid-grab.
+const DRAG_FRAME_MS = 16
+// A release that never arrives (e.g. the renderer reloaded mid-drag) must not leave the overlay glued to the cursor.
+const DRAG_TIMEOUT_MS = 30_000
+let drag: { timer: NodeJS.Timeout; offsetX: number; offsetY: number; startedAt: number } | null = null
+
+export function startOverlayDrag(): void {
+  const win = getOverlay()
+  if (!win || drag) return
+  const cursor = screen.getCursorScreenPoint()
+  const [x, y] = win.getPosition()
+  const timer = setInterval(() => {
+    const current = getOverlay()
+    if (!current || !drag || Date.now() - drag.startedAt > DRAG_TIMEOUT_MS) return endOverlayDrag()
+    const point = screen.getCursorScreenPoint()
+    current.setPosition(point.x - drag.offsetX, point.y - drag.offsetY)
+  }, DRAG_FRAME_MS)
+  drag = { timer, offsetX: cursor.x - x, offsetY: cursor.y - y, startedAt: Date.now() }
+}
+
+/** Ends a drag and nudges the overlay back inside the display it was dropped on. */
+export function endOverlayDrag(): void {
+  if (!drag) return
+  clearInterval(drag.timer)
+  drag = null
+  const win = getOverlay()
+  if (!win) return
+  const [x, y] = win.getPosition()
+  const next = clampToWorkArea({ x, y }, OVERLAY_SIZE, screen.getDisplayMatching(win.getBounds()).workArea)
+  if (next.x !== x || next.y !== y) win.setPosition(next.x, next.y)
+}
+
 export function moveOverlay(dx: number, dy: number): void {
   const win = getOverlay()
   if (!win) return
   const [x, y] = win.getPosition()
-  win.setPosition(x + dx * MOVE_STEP, y + dy * MOVE_STEP)
+  // Stop at the edge of the display the overlay is on, so the keys can't push it out of reach.
+  const area = screen.getDisplayMatching(win.getBounds()).workArea
+  const next = clampToWorkArea({ x: x + dx * MOVE_STEP, y: y + dy * MOVE_STEP }, OVERLAY_SIZE, area)
+  win.setPosition(next.x, next.y)
 }
 
 /** Opens (or focuses) the Control Center, optionally on a page such as "setup" or "history". */

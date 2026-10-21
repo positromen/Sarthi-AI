@@ -21,3 +21,11 @@ describe('withDefaults', () => {
     expect(withDefaults({ transcriptionLanguage: 'hi', listeningLanguage: 'multi' }).listeningLanguage).toBe('multi')
   })
 })
+
+describe('withDefaults overlayPosition', () => {
+  it('keeps a valid saved position and drops a malformed one', () => {
+    expect(withDefaults({ overlayPosition: { x: 10, y: 20 } }).overlayPosition).toEqual({ x: 10, y: 20 })
+    expect(withDefaults({ overlayPosition: { x: 'a', y: 2 } }).overlayPosition).toBeNull()
+    expect(withDefaults({}).overlayPosition).toBeNull()
+  })
+})
