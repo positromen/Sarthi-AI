@@ -1,3 +1,5 @@
+import { DEFAULT_HOTKEYS, mergeHotkeys, type HotkeyMap } from './hotkeys'
+
 /** Which model writes answers. Anthropic is listed for later but not wired; it behaves like Gemini. */
 export type LlmProvider = 'gemini' | 'groq' | 'anthropic'
 
@@ -30,6 +32,8 @@ export interface Settings {
   screenshotsEnabled: boolean
   /** First-run onboarding finished (or skipped because keys were already set up). */
   onboarded: boolean
+  /** Rebindable global shortcuts (Electron accelerators); see shared/hotkeys.ts. */
+  hotkeys: HotkeyMap
   /** Profile the answer engine draws on for tailored, specific answers. Plain text for now (PDF import later). */
   resume: string
   jobDescription: string
@@ -53,6 +57,7 @@ export const DEFAULT_SETTINGS: Settings = {
   overlayCompact: false,
   screenshotsEnabled: true,
   onboarded: false,
+  hotkeys: DEFAULT_HOTKEYS,
   resume: '',
   jobDescription: '',
   notes: ''
@@ -62,10 +67,11 @@ export const DEFAULT_SETTINGS: Settings = {
 export function withDefaults(stored: Record<string, unknown>): Settings {
   const { transcriptionLanguage, ...rest } = stored
   const upgraded = typeof transcriptionLanguage === 'string' ? { listeningLanguage: transcriptionLanguage, ...rest } : rest
-  return { ...DEFAULT_SETTINGS, ...upgraded } as Settings
+  return { ...DEFAULT_SETTINGS, ...upgraded, hotkeys: mergeHotkeys(rest.hotkeys) } as Settings
 }
 
-export type Hotkey ='answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
+/** Hotkey events forwarded from main to the overlay (content actions; window actions are handled in main). */
+export type Hotkey = 'answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
 
 export const API_KEY_NAMES = ['deepgram', 'gemini', 'groq', 'anthropic'] as const
 export type ApiKeyName = (typeof API_KEY_NAMES)[number]

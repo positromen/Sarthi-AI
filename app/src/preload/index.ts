@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
+import type { HotkeyAction } from '../shared/hotkeys'
 import { IPC } from '../shared/ipc'
 import type {
   AnswerState,
@@ -41,6 +42,13 @@ const api = {
   /** Tests a key with its provider before saving: { ok, warning? } or { ok: false, message }. */
   validateKey: (name: ApiKeyName, value: string): Promise<KeyCheck> => ipcRenderer.invoke(IPC.validateKey, name, value),
   getAppInfo: (): Promise<{ version: string; platform: string }> => ipcRenderer.invoke(IPC.getAppInfo),
+  setHotkey: (action: HotkeyAction, accelerator: string): Promise<{ ok: true } | { ok: false; message: string }> =>
+    ipcRenderer.invoke(IPC.setHotkey, action, accelerator),
+  /** Pauses every global shortcut while a new combination is being recorded. */
+  suspendHotkeys: (suspended: boolean): Promise<void> => ipcRenderer.invoke(IPC.suspendHotkeys, suspended),
+  resetHotkeys: (): Promise<HotkeyAction[]> => ipcRenderer.invoke(IPC.resetHotkeys),
+  /** Actions whose shortcut another app has taken. */
+  unavailableHotkeys: (): Promise<HotkeyAction[]> => ipcRenderer.invoke(IPC.unavailableHotkeys),
   startSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.startSession),
   stopSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.stopSession),
   getSessionState: (): Promise<SessionState> => ipcRenderer.invoke(IPC.sessionState),

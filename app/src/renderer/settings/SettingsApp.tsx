@@ -43,7 +43,7 @@ export function SettingsApp() {
         {page === 'answers' && <AnswersPage {...props} />}
         {page === 'language' && <LanguagePage {...props} />}
         {page === 'privacy' && <PrivacyPage {...props} />}
-        {page === 'hotkeys' && <HotkeysPage />}
+        {page === 'hotkeys' && <HotkeysPage settings={settings} />}
         {page === 'history' && <HistoryPage />}
         {page === 'about' && <AboutPage />}
       </Shell>

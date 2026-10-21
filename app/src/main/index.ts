@@ -5,7 +5,7 @@ import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type Settings } from '..
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { getHistory, initHistory } from './history'
-import { registerHotkeys } from './hotkeys'
+import { registerHotkeys, resetHotkeys, setHotkey, suspendHotkeys, unavailableHotkeys } from './hotkeys'
 import { getKeyStatus, setKey } from './keys'
 import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
@@ -78,6 +78,10 @@ function registerIpc(): void {
     if (!API_KEY_NAMES.includes(name) || typeof value !== 'string') throw new Error('Unknown API key.')
     return validateKey(name, value)
   })
+  ipcMain.handle(IPC.setHotkey, (_e, action: unknown, accelerator: unknown) => setHotkey(action, accelerator))
+  ipcMain.handle(IPC.suspendHotkeys, (_e, suspended: unknown) => suspendHotkeys(suspended === true))
+  ipcMain.handle(IPC.resetHotkeys, () => resetHotkeys())
+  ipcMain.handle(IPC.unavailableHotkeys, () => unavailableHotkeys())
   ipcMain.handle(IPC.getAppInfo, () => ({ version: app.getVersion(), platform: process.platform }))
   ipcMain.handle(IPC.startSession, () => startSession())
   ipcMain.handle(IPC.stopSession, () => stopSession())

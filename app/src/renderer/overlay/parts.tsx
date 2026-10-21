@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react'
 import type { AnswerState, ApiKeyName, ListeningStatus, ScreenshotInfo, Speaker, TranscriptTurn } from '../../shared/types'
 import type { AudioLevels } from '../audio/capture'
-import { keysFor, shortcutLabel, SHORTCUTS } from '../shortcuts'
+import { keysFor, shortcutLabel, shortcuts } from '../shortcuts'
 import { Banner, Button, IconButton, Keys, LevelMeter, Pill } from '../ui/components'
 import { Icon, Logo, StopIcon } from '../ui/icons'
 import { AnswerContent } from './AnswerContent'
@@ -436,7 +436,7 @@ export function ShortcutSheet() {
         <span className="text-[11px] text-fg-3">Global · work from any app</span>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-        {SHORTCUTS.map((shortcut) => (
+        {shortcuts().map((shortcut) => (
           <div key={shortcut.action} className="flex h-7 items-center justify-between gap-2 border-b border-hover">
             <span className="text-xs text-fg-soft">{shortcut.label}</span>
             <Keys keys={shortcut.keys} />

@@ -31,5 +31,9 @@ export const IPC = {
   navigate: 'settings:navigate',
   showOverlay: 'window:show-overlay',
   validateKey: 'keys:validate',
+  setHotkey: 'hotkeys:set',
+  suspendHotkeys: 'hotkeys:suspend',
+  resetHotkeys: 'hotkeys:reset',
+  unavailableHotkeys: 'hotkeys:unavailable',
   getAppInfo: 'app:info'
 } as const
