@@ -1,5 +1,6 @@
 import { OUTPUT_LANGUAGES } from '../shared/languages'
 import type { Settings, TranscriptTurn } from '../shared/types'
+import { selectProfile } from './rag'
 
 // How many recent transcript turns to hand the model as conversation context.
 const CONTEXT_TURNS = 8
@@ -32,7 +33,8 @@ function languageInstruction(code: string): string {
 const transcriptLine = (turn: TranscriptTurn): string =>
   `${turn.speaker === 'you' ? 'Me' : 'Interviewer'}: ${turn.text}`
 
-export function buildSystemPrompt(settings: Settings): string {
+/** With `question`, a large profile is narrowed to the parts relevant to it (see rag.ts). */
+export function buildSystemPrompt(settings: Settings, question?: string): string {
   const lines = [
     'You are an interview copilot. The user is a candidate in a live job interview and the interviewer has just asked something.',
     'Write the answer the candidate should say, in the first person ("I"), ready to speak aloud.',
@@ -57,13 +59,17 @@ export function buildSystemPrompt(settings: Settings): string {
     lines.push('Do not add filler words; keep it crisp.')
   }
 
-  const resume = settings.resume.trim()
-  const jd = settings.jobDescription.trim()
-  const notes = settings.notes.trim()
+  const full = { resume: settings.resume.trim(), jobDescription: settings.jobDescription.trim(), notes: settings.notes.trim() }
+  const profile = question ? selectProfile(full, question) : full
+  const narrowed = profile !== full
+  const { resume, jobDescription: jd, notes } = profile
   if (resume || jd || notes) {
     lines.push(
       'Ground the answer in the candidate context below: use real specifics from it where relevant, and never invent employers, roles or projects. For questions it does not cover, answer from general knowledge in the candidate\'s voice.'
     )
+    if (narrowed) {
+      lines.push('The profile is long, so below are the parts most relevant to this question ("…" marks skipped text).')
+    }
     if (resume) lines.push(`Candidate résumé:\n${resume}`)
     if (jd) lines.push(`Job description:\n${jd}`)
     if (notes) lines.push(`Extra notes to weave in when relevant:\n${notes}`)

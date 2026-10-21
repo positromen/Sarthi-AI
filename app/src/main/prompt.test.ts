@@ -33,6 +33,18 @@ describe('buildSystemPrompt', () => {
     expect(buildSystemPrompt({ ...DEFAULT_SETTINGS, outputLanguage: 'hinglish' })).toMatch(/Hinglish.*Roman/)
   })
 
+  it('narrows a large profile to the parts relevant to the question', () => {
+    // ~10k characters, past the 8k point where retrieval starts.
+    const filler = Array.from({ length: 200 }, (_, i) => `Coursework module ${i}: lectures, labs and exams.`).join('\n\n')
+    const settings = { ...DEFAULT_SETTINGS, resume: `Siddhesh Sakle.\n\nBuilt Vigilo, a PLC tampering detector.\n\n${filler}` }
+    const prompt = buildSystemPrompt(settings, 'How did you detect PLC tampering?')
+    expect(prompt).toContain('Vigilo, a PLC tampering detector')
+    expect(prompt).not.toContain('Coursework module 199')
+    expect(prompt).toMatch(/most relevant/i)
+    // Without a question (or with a small profile) the whole profile is kept.
+    expect(buildSystemPrompt(settings)).toContain('Coursework module 199')
+  })
+
   it('includes profile text when provided and omits empty profile sections', () => {
     const withProfile = buildSystemPrompt({ ...DEFAULT_SETTINGS, resume: 'Senior engineer at Acme', jobDescription: '', notes: '' })
     expect(withProfile).toContain('Senior engineer at Acme')

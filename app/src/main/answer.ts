@@ -51,7 +51,7 @@ export async function generateAnswer(question: string, context: readonly Transcr
     let text = ''
     for await (const delta of streamGemini({
       apiKey,
-      system: buildSystemPrompt(settings),
+      system: buildSystemPrompt(settings, q),
       user: buildUserPrompt(q, context, { screenshots: images.length, outputLanguage: settings.outputLanguage }),
       images,
       signal: ctrl.signal
