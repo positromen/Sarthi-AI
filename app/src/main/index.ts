@@ -11,14 +11,16 @@ import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, migrateLegacySettings, updateSettings } from './store'
+import { destroyTray, syncTray } from './tray'
 import { validateKey } from './validate-keys'
 import {
+  applyPrivacy,
   broadcast,
+  onPrivacyChange,
   createOverlayWindow,
   openSettingsWindow,
   setOverlayFocusable,
   setOverlayInteractive,
-  setPrivateMode,
   showOverlay
 } from './windows'
 
@@ -64,7 +66,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.getSettings, () => getSettings())
   ipcMain.handle(IPC.updateSettings, (_e, patch: Partial<Settings>) => {
     const settings = updateSettings(patch)
-    if ('privateMode' in patch) setPrivateMode(settings.privateMode)
+    if ('privateMode' in patch || 'onboarded' in patch) applyPrivacy()
     broadcast(IPC.settingsChanged, settings)
     return settings
   })
@@ -108,6 +110,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.setOverlayFocusable, (_e, focusable: unknown) => setOverlayFocusable(focusable === true))
   ipcMain.on(IPC.openSettings, (_e, page?: unknown) => openSettingsWindow(typeof page === 'string' ? page : undefined))
   ipcMain.on(IPC.showOverlay, () => showOverlay())
+  ipcMain.on(IPC.quitApp, () => app.quit())
 }
 
 app.on('second-instance', () => openSettingsWindow())
@@ -124,10 +127,13 @@ app.whenReady().then(() => {
   registerLoopbackAudio()
   createOverlayWindow()
   registerHotkeys()
+  onPrivacyChange(syncTray)
+  syncTray()
   openSettingsWindow()
 })
 
 app.on('will-quit', () => {
+  destroyTray()
   globalShortcut.unregisterAll()
   stopSession()
   // The socket's close event may not fire before the process exits, so save the running session now.

@@ -13,12 +13,12 @@ import type { Hotkey } from '../shared/types'
 import { captureScreenshot } from './screenshot'
 import { getSettings, updateSettings } from './store'
 import {
+  applyPrivacy,
   broadcast,
   focusOverlay,
   getOverlay,
   moveOverlay,
   openSettingsWindow,
-  setPrivateMode,
   toggleOverlayVisible
 } from './windows'
 
@@ -44,8 +44,8 @@ const HANDLERS: Record<HotkeyAction, () => void> = {
   'open-settings': () => openSettingsWindow(),
   'toggle-private': () => {
     const privateMode = !getSettings().privateMode
-    setPrivateMode(privateMode)
     saveSettings({ privateMode })
+    applyPrivacy()
   }
 }
 

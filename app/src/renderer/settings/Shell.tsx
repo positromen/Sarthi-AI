@@ -100,17 +100,26 @@ export function Shell({
           ))}
         </div>
         <div className="flex flex-col gap-2.5 border-t border-line px-4 py-3.5">
-          {settings.privateMode ? (
-            <span className="inline-flex items-center gap-1.5 text-[11.5px] text-fg-3">
-              <Icon name="private" size={13} className="text-leaf" />
-              Private mode on
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-[11.5px] text-warn">
-              <Icon name="visible" size={13} />
-              Visible to screen share
-            </span>
-          )}
+          <div className="flex items-center justify-between">
+            {settings.privateMode ? (
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-fg-3">
+                <Icon name="private" size={13} className="text-leaf" />
+                Private mode on
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] text-warn">
+                <Icon name="visible" size={13} />
+                Visible to screen share
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => window.sarthi.quitApp()}
+              className="rounded-sm px-1.5 py-0.5 text-[11.5px] text-fg-3 transition-colors duration-120 hover:bg-hover hover:text-danger focus-ring [--ring-gap:var(--color-sidebar)]"
+            >
+              Quit
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => window.sarthi.showOverlay()}

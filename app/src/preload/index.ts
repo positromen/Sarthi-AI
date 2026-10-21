@@ -40,6 +40,8 @@ const api = {
   openSettings: (page?: string) => ipcRenderer.send(IPC.openSettings, page),
   onNavigate: (callback: (page: string) => void) => subscribe(IPC.navigate, callback),
   showOverlay: () => ipcRenderer.send(IPC.showOverlay),
+  /** Quits Sarthi (the running session is saved first). */
+  quitApp: () => ipcRenderer.send(IPC.quitApp),
   onKeysChanged: (callback: (status: ApiKeyStatus) => void) => subscribe(IPC.keysChanged, callback),
   /** Tests a key with its provider before saving: { ok, warning? } or { ok: false, message }. */
   validateKey: (name: ApiKeyName, value: string): Promise<KeyCheck> => ipcRenderer.invoke(IPC.validateKey, name, value),

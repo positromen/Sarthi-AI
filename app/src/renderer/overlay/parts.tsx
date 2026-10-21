@@ -51,7 +51,7 @@ export function Header({
         <Pill tone={status}>{PILL_LABEL[status]}</Pill>
       </span>
       {privateMode ? (
-        <span title="Hidden from screen share" className="inline-flex items-center gap-1 text-[11px] text-fg-3">
+        <span className="inline-flex items-center gap-1 text-[11px] text-fg-3">
           <Icon name="private" size={12} />
           Private
         </span>
@@ -66,7 +66,6 @@ export function Header({
         <button
           type="button"
           onClick={onToggleListen}
-          title={`Stop listening (${shortcutLabel('toggle-listening')})`}
           className="inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-danger-solid/28 bg-danger-solid/12 pr-[11px] pl-[9px] text-xs font-semibold whitespace-nowrap text-danger transition-colors duration-120 hover:bg-danger-solid/20 focus-ring-danger"
         >
           <StopIcon />
@@ -79,7 +78,6 @@ export function Header({
           icon="mic"
           disabled={setupNeeded}
           onClick={onToggleListen}
-          title={setupNeeded ? 'Finish setup first' : `Start listening (${shortcutLabel('toggle-listening')})`}
           className="pr-[11px] pl-[9px]"
         >
           Listen
@@ -104,7 +102,7 @@ export function CompactHeader({ status, question, onExpand }: { status: Listenin
   return (
     <div className="flex h-[34px] shrink-0 items-center gap-2 border-b border-hover pr-1.5 pl-3">
       <Logo size={14} />
-      <span className={`size-1.5 shrink-0 rounded-full ${dot}`} title={PILL_LABEL[status]} />
+      <span className={`size-1.5 shrink-0 rounded-full ${dot}`} />
       <span className="min-w-0 flex-1 truncate text-xs text-fg-muted">{question ? `Q · ${question}` : 'Waiting for a question'}</span>
       <IconButton icon="expand" label="Full view" size={26} onClick={onExpand} />
     </div>
@@ -215,7 +213,6 @@ export function Meters({ levels, showSending }: { levels: AudioLevels; showSendi
       {showSending && (
         <span
           className={`ml-auto text-[10px] ${levels.sending ? 'text-leaf' : 'text-fg-3'}`}
-          title="Audio goes to Deepgram only around speech (Settings → Privacy & overlay → Skip silence)"
         >
           {levels.sending ? '● sending' : '○ silence skipped'}
         </span>
@@ -233,7 +230,6 @@ export function ShotStrip({ shots, onRemove }: { shots: ScreenshotInfo[]; onRemo
           <button
             type="button"
             onClick={() => onRemove(shot.id)}
-            title="Remove screenshot"
             aria-label="Remove screenshot"
             className="absolute top-[3px] right-[3px] hidden size-4 items-center justify-center rounded-full bg-black/80 text-fg group-hover:flex focus-visible:flex focus-ring"
           >
@@ -411,7 +407,7 @@ export function AnswerArea({
       </div>
       {!compact && answer.status === 'done' && (
         <div className="flex shrink-0 items-center gap-2 pr-3 pb-2.5 pl-4">
-          <Button size={26} icon="reAnswer" onClick={onReanswer} title={`Answer again (${shortcutLabel('answer')} answers the latest question)`}>
+          <Button size={26} icon="reAnswer" onClick={onReanswer}>
             Re-answer
           </Button>
           <span className="flex-1" />

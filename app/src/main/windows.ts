@@ -2,6 +2,7 @@ import { app, BrowserWindow, screen, shell } from 'electron'
 import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import { getSettings } from './store'
+import { controlCenterInTaskbar } from './trayModel'
 
 const OVERLAY_WIDTH = 520
 const OVERLAY_HEIGHT = 640
@@ -58,7 +59,7 @@ export function createOverlayWindow(): BrowserWindow {
 
   overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   overlay.setIgnoreMouseEvents(true, { forward: true })
-  setPrivateMode(getSettings().privateMode)
+  overlay.setContentProtection(getSettings().privateMode)
 
   overlay.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(permission === 'media' || permission === 'display-capture')
@@ -73,9 +74,25 @@ export function createOverlayWindow(): BrowserWindow {
   return overlay
 }
 
-export function setPrivateMode(enabled: boolean): void {
-  getOverlay()?.setContentProtection(enabled)
-  if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.setContentProtection(enabled)
+const privacyListeners: (() => void)[] = []
+
+/** Runs after every privacy change (the tray follows private mode this way, without an import cycle). */
+export function onPrivacyChange(listener: () => void): void {
+  privacyListeners.push(listener)
+}
+
+/**
+ * Applies the saved private-mode setting to every surface a screen share could show: content protection on both
+ * windows, the Control Center's taskbar button, and (through listeners) the tray icon. Call after saving settings.
+ */
+export function applyPrivacy(): void {
+  const settings = getSettings()
+  getOverlay()?.setContentProtection(settings.privateMode)
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.setContentProtection(settings.privateMode)
+    settingsWindow.setSkipTaskbar(!controlCenterInTaskbar(settings))
+  }
+  for (const listener of privacyListeners) listener()
 }
 
 export function setOverlayInteractive(interactive: boolean): void {
@@ -136,6 +153,7 @@ export function openSettingsWindow(page?: string): void {
     minWidth: 760,
     minHeight: 560,
     title: 'Sarthi AI',
+    skipTaskbar: !controlCenterInTaskbar(getSettings()),
     autoHideMenuBar: true,
     backgroundColor: '#0b0f0c',
     webPreferences: { preload: preloadPath() }

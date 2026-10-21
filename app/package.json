@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
@@ -20,6 +21,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^44.9.2",
     "electron-vite": "^6.0.0",
+    "png-to-ico": "3.0.2",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",

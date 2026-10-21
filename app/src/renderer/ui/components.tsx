@@ -98,7 +98,6 @@ export function IconButton({
   return (
     <button
       type="button"
-      title={label}
       aria-label={label}
       className={cx(
         'flex shrink-0 items-center justify-center rounded-[7px] transition-colors duration-120 focus-ring disabled:text-[#4a5a4f]',

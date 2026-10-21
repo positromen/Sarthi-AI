@@ -1,5 +1,6 @@
 // About (design B12): version, the local-first promise, and links to the key consoles.
 import { useEffect, useState } from 'react'
+import { Button } from '../../ui/components'
 import { Logo } from '../../ui/icons'
 import { Card, ExternalLink } from '../layout'
 
@@ -38,6 +39,15 @@ export function AboutPage() {
             <ExternalLink href={`https://${host}`}>{host}</ExternalLink>
           </div>
         ))}
+      </Card>
+      <Card className="mt-4 flex items-center justify-between gap-4 px-4 py-3">
+        <span className="text-[12.5px] text-fg-muted">
+          Quitting stops listening and saves the current session. The tray icon (shown when private mode is off) can
+          also quit.
+        </span>
+        <Button variant="danger" icon="close" onClick={() => window.sarthi.quitApp()}>
+          Quit Sarthi
+        </Button>
       </Card>
     </>
   )

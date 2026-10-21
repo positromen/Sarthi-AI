@@ -287,6 +287,7 @@ export function Onboarding({ settings, update }: { settings: Settings; update: (
           </Button>
         )}
         <span className="flex-1" />
+        {!canContinue(step, keyStatus) && <span className="text-xs text-fg-3">Save all three keys to continue</span>}
         {step === 3 && (
           <Button variant="danger" className="text-fg-2 hover:text-fg" onClick={() => setStep(4)}>
             Skip for now
@@ -296,7 +297,6 @@ export function Onboarding({ settings, update }: { settings: Settings; update: (
           variant="primary"
           iconRight={step === last ? 'arrowRight' : undefined}
           disabled={!canContinue(step, keyStatus)}
-          title={!canContinue(step, keyStatus) ? 'Save all three keys to continue' : undefined}
           onClick={() => (step === last ? finish() : setStep(step + 1))}
           className="[--ring-gap:var(--color-ink)]"
         >
