@@ -122,6 +122,15 @@ export function CompactHeader({ status, question, onExpand }: { status: Listenin
 
 // ── Banners ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+/** Private mode is on, but this Windows build captures protected windows as a black box. */
+export function UnsupportedStrip() {
+  return (
+    <Banner tone="warn" icon="warning" className="border-b py-[7px] pr-2.5">
+      This Windows version can’t hide Sarthi from screen share. Update Windows.
+    </Banner>
+  )
+}
+
 export function VisibleStrip({ onHide }: { onHide: () => void }) {
   return (
     <Banner

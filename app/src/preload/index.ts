@@ -3,6 +3,7 @@ import type { HotkeyAction } from '../shared/hotkeys'
 import { IPC } from '../shared/ipc'
 import type {
   AnswerState,
+  AppInfo,
   ApiKeyName,
   ApiKeyStatus,
   Hotkey,
@@ -48,7 +49,7 @@ const api = {
   onKeysChanged: (callback: (status: ApiKeyStatus) => void) => subscribe(IPC.keysChanged, callback),
   /** Tests a key with its provider before saving: { ok, warning? } or { ok: false, message }. */
   validateKey: (name: ApiKeyName, value: string): Promise<KeyCheck> => ipcRenderer.invoke(IPC.validateKey, name, value),
-  getAppInfo: (): Promise<{ version: string; platform: string }> => ipcRenderer.invoke(IPC.getAppInfo),
+  getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC.getAppInfo),
   setHotkey: (action: HotkeyAction, accelerator: string): Promise<{ ok: true } | { ok: false; message: string }> =>
     ipcRenderer.invoke(IPC.setHotkey, action, accelerator),
   /** Pauses every global shortcut while a new combination is being recorded. */

@@ -1,7 +1,7 @@
 // About (design B12): version, the local-first promise, and links to the key consoles.
-import { useEffect, useState } from 'react'
 import { Button, useToast } from '../../ui/components'
 import { Logo } from '../../ui/icons'
+import { useAppInfo } from '../../useAppInfo'
 import { Card, ExternalLink } from '../layout'
 
 const CONSOLES = [
@@ -12,11 +12,8 @@ const CONSOLES = [
 ] as const
 
 export function AboutPage() {
-  const [info, setInfo] = useState<{ version: string; platform: string } | null>(null)
+  const info = useAppInfo()
   const toast = useToast()
-  useEffect(() => {
-    window.sarthi.getAppInfo().then(setInfo)
-  }, [])
   return (
     <>
       <div className="mb-6 flex items-center gap-4">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { controlCenterInTaskbar, trayMenu, trayVisible } from './trayModel'
+import { controlCenterListed, trayMenu, trayVisible } from './trayModel'
 
 describe('tray and taskbar privacy', () => {
   it('shows the tray only when private mode is off (it would be visible in a full-screen share)', () => {
@@ -7,10 +7,10 @@ describe('tray and taskbar privacy', () => {
     expect(trayVisible({ privateMode: false })).toBe(true)
   })
 
-  it('keeps the Control Center off the taskbar in private mode, except during first-run onboarding', () => {
-    expect(controlCenterInTaskbar({ privateMode: true, onboarded: true })).toBe(false)
-    expect(controlCenterInTaskbar({ privateMode: true, onboarded: false })).toBe(true)
-    expect(controlCenterInTaskbar({ privateMode: false, onboarded: true })).toBe(true)
+  it('keeps the Control Center off the taskbar and Alt+Tab in private mode, except during first-run onboarding', () => {
+    expect(controlCenterListed({ privateMode: true, onboarded: true })).toBe(false)
+    expect(controlCenterListed({ privateMode: true, onboarded: false })).toBe(true)
+    expect(controlCenterListed({ privateMode: false, onboarded: true })).toBe(true)
   })
 })
 

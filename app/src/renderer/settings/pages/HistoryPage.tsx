@@ -6,6 +6,7 @@ import type { SessionRecord, SessionSummary } from '../../../shared/types'
 import { sessionUsageLine } from '../../../shared/usageFormat'
 import { AnswerContent } from '../../overlay/AnswerContent'
 import { keysFor } from '../../shortcuts'
+import { useCallActive } from '../useCallActive'
 import { Badge, Button, EmptyState, Keys, Segmented, useToast } from '../../ui/components'
 import { Icon } from '../../ui/icons'
 import {
@@ -82,15 +83,8 @@ function SessionDetail({ id }: { id: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [listening, setListening] = useState(false)
+  const listening = useCallActive()
   const toast = useToast()
-
-  // The Save dialog is an ordinary Windows window that a screen share would show, so say so during a call.
-  useEffect(() => {
-    const track = (state: { status: string }) => setListening(state.status === 'listening' || state.status === 'connecting')
-    window.sarthi.getSessionState().then(track)
-    return window.sarthi.onSessionState(track)
-  }, [])
 
   const exportRecord = async () => {
     setError(null)

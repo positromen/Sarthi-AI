@@ -3,6 +3,7 @@ import type { Settings, VadSensitivity } from '../../../shared/types'
 import { keysFor } from '../../shortcuts'
 import { Keys, Segmented, Toggle } from '../../ui/components'
 import { Icon } from '../../ui/icons'
+import { useAppInfo } from '../../useAppInfo'
 import { Card, PageHeader, Row, SectionTitle } from '../layout'
 
 function MiniCard({ opacity, light }: { opacity: number; light: boolean }) {
@@ -29,11 +30,12 @@ function MiniCard({ opacity, light }: { opacity: number; light: boolean }) {
 
 export function PrivacyPage({ settings, update }: { settings: Settings; update: (patch: Partial<Settings>) => void }) {
   const opacity = Math.round(settings.overlayOpacity * 100)
+  const unsupported = useAppInfo()?.privacySupported === false
   return (
     <>
       <PageHeader title="Privacy & overlay" subtitle="Control what others can see during a call." />
 
-      <Card className={settings.privateMode ? '' : 'border-warn/30'}>
+      <Card className={settings.privateMode && !unsupported ? '' : 'border-warn/30'}>
         <Row
           label="Private mode"
           hint="Hide the overlay and this window from screen share and recordings."
@@ -45,13 +47,15 @@ export function PrivacyPage({ settings, update }: { settings: Settings; update: 
         </Row>
         <div
           className={`flex items-center gap-1.5 border-t border-line px-4 py-2.5 text-[12px] ${
-            settings.privateMode ? 'text-leaf' : 'bg-warn/8 text-warn-soft'
+            settings.privateMode && !unsupported ? 'text-leaf' : 'bg-warn/8 text-warn-soft'
           }`}
         >
-          <Icon name={settings.privateMode ? 'private' : 'warning'} size={14} />
-          {settings.privateMode
-            ? 'On · both windows are hidden from capture'
-            : 'Off · the overlay and this window are visible to screen share'}
+          <Icon name={settings.privateMode && !unsupported ? 'private' : 'warning'} size={14} />
+          {unsupported
+            ? 'This Windows version can’t hide Sarthi: a screen share shows it as a black box. Update to Windows 10 version 2004 or later.'
+            : settings.privateMode
+              ? 'On · both windows are hidden from capture and from Alt+Tab'
+              : 'Off · the overlay and this window are visible to screen share'}
         </div>
       </Card>
       <p className="mt-2 text-[12px] leading-normal text-fg-3">

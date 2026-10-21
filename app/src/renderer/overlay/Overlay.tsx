@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAppInfo } from '../useAppInfo'
 import { useSettings } from '../useSettings'
 import {
   AnswerArea,
@@ -7,6 +8,7 @@ import {
   Header,
   Meters,
   SessionErrorBanner,
+  UnsupportedStrip,
   SetupCard,
   ShortcutSheet,
   ShotStrip,
@@ -57,6 +59,7 @@ export function Overlay() {
     return () => window.removeEventListener('keydown', close)
   }, [sheetOpen])
 
+  const appInfo = useAppInfo()
   if (!settings) return null
 
   const { session, turns, interim, levels, active } = listening
@@ -84,7 +87,9 @@ export function Overlay() {
   }
 
   return (
-    <div className="relative h-full">
+    // In private mode the pointer stays an arrow over the card: a grab hand or text cursor appearing over "nothing"
+    // would show in the share, since the cursor is captured even though the window is not.
+    <div className={`relative h-full ${settings.privateMode ? 'private-cursor' : ''}`}>
       <div
         {...interactive}
         className="absolute top-2 right-2 left-2 flex max-h-[624px] flex-col overflow-hidden rounded-card border border-line bg-panel text-fg shadow-card"
@@ -114,6 +119,7 @@ export function Overlay() {
               onToggleSheet={() => setSheetOpen(!sheetOpen)}
             />
             {!settings.privateMode && <VisibleStrip onHide={() => update({ privateMode: true })} />}
+            {settings.privateMode && appInfo?.privacySupported === false && <UnsupportedStrip />}
             {session.error && (
               <SessionErrorBanner
                 message={session.error}

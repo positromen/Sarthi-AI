@@ -5,6 +5,7 @@ import { Button, Textarea } from '../../ui/components'
 import { Icon } from '../../ui/icons'
 import { Card, PageHeader } from '../layout'
 import { profileStrength } from '../model'
+import { useCallActive } from '../useCallActive'
 
 type Status = { kind: 'loaded'; name: string; chars: number } | { kind: 'error'; message: string } | null
 
@@ -91,12 +92,16 @@ const LEVEL_COLOR = { Empty: 'text-fg-3', Weak: 'text-danger', Fair: 'text-warn'
 
 export function ProfilePage({ settings, update }: { settings: Settings; update: (patch: Partial<Settings>) => void }) {
   const strength = profileStrength(settings)
+  const callActive = useCallActive()
   return (
     <>
       <PageHeader
         title="Profile"
         subtitle="Every answer is grounded in this. It stays on this PC, and a long profile doesn't slow answers down. Fields save when you click away."
       />
+      {callActive && (
+        <p className="mb-4 text-[12.5px] text-warn">The Upload file picker is visible in screen share. Upload before or after the call.</p>
+      )}
       <Card className="mb-4 flex items-center gap-4 px-4 py-3.5">
         <div className="flex flex-1 flex-col gap-1.5">
           <div className="flex items-baseline gap-2">

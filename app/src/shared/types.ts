@@ -140,6 +140,13 @@ export interface SessionRecord {
   usage?: SessionUsage
 }
 
+export interface AppInfo {
+  version: string
+  platform: string
+  /** This OS can leave Sarthi out of a screen share (Windows 10 version 2004+); see shared/privacySupport.ts. */
+  privacySupported: boolean
+}
+
 /** One finished AI request, as the router reports it. */
 export interface AiCall {
   provider: LlmProvider

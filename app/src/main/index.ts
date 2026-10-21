@@ -3,7 +3,8 @@ import { mkdirSync } from 'node:fs'
 import { release, type } from 'node:os'
 import { basename, join } from 'node:path'
 import { IPC } from '../shared/ipc'
-import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type Settings } from '../shared/types'
+import { captureExclusionSupported } from '../shared/privacySupport'
+import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type AppInfo, type Settings } from '../shared/types'
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { exportSession } from './exportSession'
@@ -112,7 +113,14 @@ function registerIpc(): void {
   ipcMain.handle(IPC.suspendHotkeys, (_e, suspended: unknown) => suspendHotkeys(suspended === true))
   ipcMain.handle(IPC.resetHotkeys, () => resetHotkeys())
   ipcMain.handle(IPC.unavailableHotkeys, () => unavailableHotkeys())
-  ipcMain.handle(IPC.getAppInfo, () => ({ version: app.getVersion(), platform: process.platform }))
+  ipcMain.handle(
+    IPC.getAppInfo,
+    (): AppInfo => ({
+      version: app.getVersion(),
+      platform: process.platform,
+      privacySupported: captureExclusionSupported(process.platform, release())
+    })
+  )
   ipcMain.handle(IPC.startSession, () => startSession())
   ipcMain.handle(IPC.stopSession, () => stopSession())
   ipcMain.handle(IPC.sessionState, () => getSessionState())

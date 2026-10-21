@@ -6,10 +6,10 @@
 export const trayVisible = ({ privateMode }: { privateMode: boolean }): boolean => !privateMode
 
 /**
- * In private mode the Control Center leaves the taskbar (reach it with the settings hotkey or the overlay's ⚙). During
- * first-run onboarding it stays, so a new user can't lose the window behind others.
+ * In private mode the Control Center leaves the taskbar and Alt+Tab, both of which a full-screen share shows (reach it
+ * with the settings hotkey or the overlay's ⚙). During first-run onboarding it stays, so a new user can't lose it.
  */
-export const controlCenterInTaskbar = ({ privateMode, onboarded }: { privateMode: boolean; onboarded: boolean }): boolean =>
+export const controlCenterListed = ({ privateMode, onboarded }: { privateMode: boolean; onboarded: boolean }): boolean =>
   !privateMode || !onboarded
 
 export type TrayAction = 'toggle-overlay' | 'toggle-listening' | 'open-settings' | 'quit'

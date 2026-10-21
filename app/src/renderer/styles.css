@@ -81,6 +81,12 @@
   }
 }
 
+/* Private mode: see Overlay.tsx. */
+.private-cursor,
+.private-cursor * {
+  cursor: default !important;
+}
+
 html,
 body,
 #root {

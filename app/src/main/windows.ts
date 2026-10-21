@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import { clampToWorkArea, restoreOverlayPosition } from '../shared/overlayPosition'
 import { getSettings, updateSettings } from './store'
-import { controlCenterInTaskbar } from './trayModel'
+import { controlCenterListed } from './trayModel'
 
 const OVERLAY_WIDTH = 520
 const OVERLAY_HEIGHT = 640
@@ -62,7 +62,9 @@ export function createOverlayWindow(): BrowserWindow {
     alwaysOnTop: true,
     // Clicking the overlay must never pull focus from the meeting app; only the ask box asks for focus, briefly.
     focusable: false,
-    type: 'panel',
+    // On Windows "toolbar" makes it a tool window: no taskbar button and no Alt+Tab / Win+Tab entry, both of which a
+    // full-screen share would show. ("panel" is the macOS equivalent.)
+    type: process.platform === 'win32' ? 'toolbar' : 'panel',
     show: false,
     webPreferences: { preload: preloadPath(), backgroundThrottling: false }
   })
@@ -98,6 +100,22 @@ export function createOverlayWindow(): BrowserWindow {
 
 const privacyListeners: (() => void)[] = []
 
+// Windows leaves owned windows out of the taskbar and Alt+Tab. In private mode the Control Center is owned by this
+// never-shown window; owning it by the overlay instead would pin it above the meeting (owned windows sit above owners).
+let hiddenOwner: BrowserWindow | null = null
+
+function getHiddenOwner(): BrowserWindow {
+  if (!hiddenOwner || hiddenOwner.isDestroyed()) {
+    hiddenOwner = new BrowserWindow({ show: false, width: 1, height: 1, skipTaskbar: true, focusable: false })
+  }
+  return hiddenOwner
+}
+
+function listControlCenter(win: BrowserWindow, listed: boolean): void {
+  win.setSkipTaskbar(!listed)
+  win.setParentWindow(listed ? null : getHiddenOwner())
+}
+
 /** Runs after every privacy change (the tray follows private mode this way, without an import cycle). */
 export function onPrivacyChange(listener: () => void): void {
   privacyListeners.push(listener)
@@ -112,7 +130,7 @@ export function applyPrivacy(): void {
   getOverlay()?.setContentProtection(settings.privateMode)
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.setContentProtection(settings.privateMode)
-    settingsWindow.setSkipTaskbar(!controlCenterInTaskbar(settings))
+    listControlCenter(settingsWindow, controlCenterListed(settings))
   }
   for (const listener of privacyListeners) listener()
 }
@@ -202,6 +220,7 @@ export function openSettingsWindow(page?: string): void {
   const target = page && PAGE_SLUG.test(page) ? page : undefined
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     if (target) settingsWindow.webContents.send(IPC.navigate, target)
+    if (settingsWindow.isMinimized()) settingsWindow.restore()
     settingsWindow.show()
     settingsWindow.focus()
     return
@@ -212,12 +231,21 @@ export function openSettingsWindow(page?: string): void {
     minWidth: 760,
     minHeight: 560,
     title: 'Sarthi AI',
-    skipTaskbar: !controlCenterInTaskbar(getSettings()),
+    // Shown only after protection is applied: it takes effect at the next composition, so a window shown at once
+    // could reach a share for a frame.
+    show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0b0f0c',
     webPreferences: { preload: preloadPath() }
   })
-  settingsWindow.setContentProtection(getSettings().privateMode)
+  const created = settingsWindow
+  created.setContentProtection(getSettings().privateMode)
+  listControlCenter(created, controlCenterListed(getSettings()))
+  created.once('ready-to-show', () => created.show())
+  // Unlisted, a minimized window would become a stub above the taskbar; hide it instead (the hotkey brings it back).
+  created.on('minimize', () => {
+    if (!controlCenterListed(getSettings())) created.hide()
+  })
   // Links in the Control Center (key consoles) open in the browser, never inside the app.
   settingsWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https:\/\//.test(url)) shell.openExternal(url)
