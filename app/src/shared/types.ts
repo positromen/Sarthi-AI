@@ -1,4 +1,5 @@
-export type LlmProvider = 'gemini' | 'anthropic'
+/** Which model writes answers. Anthropic is listed for later but not wired; it behaves like Gemini. */
+export type LlmProvider = 'gemini' | 'groq' | 'anthropic'
 
 export type ResponseLength = 'short' | 'medium' | 'long'
 export type ResponseFormat = 'bullets' | 'paragraph'
@@ -57,7 +58,7 @@ export function withDefaults(stored: Record<string, unknown>): Settings {
 
 export type Hotkey ='answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
 
-export type ApiKeyName = 'deepgram' | 'gemini' | 'anthropic'
+export type ApiKeyName = 'deepgram' | 'gemini' | 'groq' | 'anthropic'
 export type ApiKeyStatus = Record<ApiKeyName, boolean>
 
 /** Channel 0 of the stereo stream is the mic, channel 1 is system loopback audio. */

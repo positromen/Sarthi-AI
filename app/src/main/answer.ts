@@ -1,8 +1,8 @@
 import { IPC } from '../shared/ipc'
 import type { AnswerState, TranscriptTurn } from '../shared/types'
-import { streamGemini } from './gemini'
 import { getHistory } from './history'
 import { getKey } from './keys'
+import { streamAnswer } from './llm'
 import { buildSystemPrompt, buildUserPrompt } from './prompt'
 import { getScreenshotImages } from './screenshot'
 import { getSettings } from './store'
@@ -33,12 +33,6 @@ export async function generateAnswer(question: string, context: readonly Transcr
     return
   }
 
-  const apiKey = getKey('gemini')
-  if (!apiKey) {
-    setState({ status: 'error', text: '', question: q, error: 'Add your Gemini key in Settings (Ctrl+Shift+S).' })
-    return
-  }
-
   controller?.abort()
   const ctrl = new AbortController()
   controller = ctrl
@@ -49,13 +43,15 @@ export async function generateAnswer(question: string, context: readonly Transcr
   const settings = getSettings()
   try {
     let text = ''
-    for await (const delta of streamGemini({
-      apiKey,
+    const request = {
+      provider: settings.llmProvider,
       system: buildSystemPrompt(settings, q),
       user: buildUserPrompt(q, context, { screenshots: images.length, outputLanguage: settings.outputLanguage }),
       images,
       signal: ctrl.signal
-    })) {
+    }
+    // A missing key surfaces as the error state below, naming which keys to add.
+    for await (const delta of streamAnswer(request, getKey)) {
       if (superseded()) return
       text += delta
       setState({ status: 'streaming', text, question: q })

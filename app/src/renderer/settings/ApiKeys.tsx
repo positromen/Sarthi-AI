@@ -4,6 +4,7 @@ import type { ApiKeyName, ApiKeyStatus } from '../../shared/types'
 const KEYS: { name: ApiKeyName; label: string; hint: string; required: boolean }[] = [
   { name: 'deepgram', label: 'Deepgram', hint: 'Live transcription · console.deepgram.com', required: true },
   { name: 'gemini', label: 'Gemini', hint: 'Answers (free tier) · aistudio.google.com', required: true },
+  { name: 'groq', label: 'Groq', hint: 'Fast answers (free tier) · console.groq.com', required: true },
   { name: 'anthropic', label: 'Anthropic', hint: 'Optional Claude answers · console.anthropic.com', required: false }
 ]
 

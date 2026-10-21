@@ -176,6 +176,15 @@ export function SettingsApp() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Answer style</h2>
         <Select
+          label="AI provider"
+          value={settings.llmProvider}
+          options={[
+            { value: 'gemini', label: 'Gemini (default)' },
+            { value: 'groq', label: 'Groq (fastest)' }
+          ]}
+          onChange={(llmProvider) => update({ llmProvider })}
+        />
+        <Select
           label="Length"
           value={settings.responseLength}
           options={[

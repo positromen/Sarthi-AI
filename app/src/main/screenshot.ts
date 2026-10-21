@@ -1,7 +1,7 @@
 import { desktopCapturer, screen } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { ScreenshotInfo } from '../shared/types'
-import type { GeminiImage } from './gemini'
+import type { LlmImage } from './llm-types'
 import { broadcast } from './windows'
 
 // Every kept screenshot rides along with each answer request, so cap how many we hold.
@@ -58,6 +58,6 @@ export function removeScreenshot(id: number): ScreenshotInfo[] {
   return publish()
 }
 
-export function getScreenshotImages(): GeminiImage[] {
+export function getScreenshotImages(): LlmImage[] {
   return shots.map((shot) => ({ mimeType: 'image/jpeg', data: shot.jpeg }))
 }

@@ -1,7 +1,7 @@
 import type { SessionRecord } from '../shared/types'
-import { streamGemini } from './gemini'
 import { getHistory } from './history'
 import { getKey } from './keys'
+import { streamAnswer } from './llm'
 import { buildNotesPrompt } from './prompt'
 import { getSettings } from './store'
 
@@ -14,12 +14,12 @@ export async function generateNotes(id: string): Promise<SessionRecord> {
   const record = history?.get(id)
   if (!history || !record) throw new Error('That session is no longer in history.')
   if (record.turns.length === 0) throw new Error('This session has no transcript to review.')
-  const apiKey = getKey('gemini')
-  if (!apiKey) throw new Error('Add your Gemini key in Settings first.')
 
-  const { system, user } = buildNotesPrompt(record.turns, getSettings())
+  const settings = getSettings()
+  const { system, user } = buildNotesPrompt(record.turns, settings)
   let text = ''
-  for await (const delta of streamGemini({ apiKey, system, user, maxOutputTokens: NOTES_MAX_TOKENS })) text += delta
-  if (!text.trim()) throw new Error('Gemini returned empty notes. Try again.')
+  const request = { provider: settings.llmProvider, system, user, maxOutputTokens: NOTES_MAX_TOKENS }
+  for await (const delta of streamAnswer(request, getKey)) text += delta
+  if (!text.trim()) throw new Error('The AI returned empty notes. Try again.')
   return history.setNotes(id, text.trim())!
 }

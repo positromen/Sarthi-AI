@@ -39,5 +39,10 @@ export function setKey(name: ApiKeyName, value: string): ApiKeyStatus {
 
 export function getKeyStatus(): ApiKeyStatus {
   const encrypted = readEncrypted()
-  return { deepgram: !!encrypted.deepgram, gemini: !!encrypted.gemini, anthropic: !!encrypted.anthropic }
+  return {
+    deepgram: !!encrypted.deepgram,
+    gemini: !!encrypted.gemini,
+    groq: !!encrypted.groq,
+    anthropic: !!encrypted.anthropic
+  }
 }
