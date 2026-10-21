@@ -6,6 +6,8 @@ import type { SessionRecord, SessionSummary, TranscriptTurn } from '../shared/ty
 // Session ids are start times in ms. Anything else coming from the renderer is refused before it touches the disk.
 const ID_PATTERN = /^\d{1,16}$/
 const TITLE_LENGTH = 80
+// Typed questions answered within this gap of each other belong to the same history entry.
+const LOOSE_GAP_MS = 30 * 60_000
 
 export interface HistoryOptions {
   /** Oldest sessions beyond this are deleted, so history can't grow without bound on a user's disk. */
@@ -32,6 +34,8 @@ function summarize(record: SessionRecord): SessionSummary {
 /** Saves each listening session (transcript + answers + notes) as one JSON file. Plain fs, so it is testable. */
 export class HistoryStore {
   private current: SessionRecord | null = null
+  // The session collecting answers to typed questions while not listening.
+  private loose: { id: string; lastAt: number } | null = null
   private saveTimer: ReturnType<typeof setTimeout> | null = null
   private readonly maxSessions: number
   private readonly saveDelayMs: number
@@ -57,10 +61,24 @@ export class HistoryStore {
     this.scheduleSave()
   }
 
+  /**
+   * Records an answer. During a Listen session it joins that session; otherwise (a question typed without listening)
+   * it goes into a "typed" session that collects answers less than 30 minutes apart.
+   */
   addAnswer(question: string, text: string, at = Date.now()): void {
-    if (!this.current) return
-    this.current.answers.push({ question, text, at })
-    this.scheduleSave()
+    if (this.current) {
+      this.current.answers.push({ question, text, at })
+      this.scheduleSave()
+      return
+    }
+    const previous = this.loose && at - this.loose.lastAt <= LOOSE_GAP_MS ? this.get(this.loose.id) : null
+    const record: SessionRecord = previous ?? { id: String(at), startedAt: at, endedAt: at, turns: [], answers: [], notes: null }
+    record.answers.push({ question, text, at })
+    record.endedAt = at
+    this.write(record)
+    this.loose = { id: record.id, lastAt: at }
+    if (!previous) this.prune()
+    this.onChange()
   }
 
   /** Ends the current session; returns its summary, or null if there was nothing worth keeping. */

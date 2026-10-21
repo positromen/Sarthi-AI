@@ -51,10 +51,26 @@ describe('HistoryStore', () => {
     expect(store.list()).toEqual([])
   })
 
-  it('ignores answers given outside a session', () => {
+  it('saves answers to typed questions outside a Listen session, grouping those within 30 minutes', () => {
     const store = new HistoryStore(dir)
-    store.addAnswer('Why us?', 'Because.')
-    expect(store.list()).toEqual([])
+    store.addAnswer('Why us?', 'Because.', 1_000)
+    store.addAnswer('Notice period?', 'Thirty days.', 1_000 + 10 * 60_000)
+    store.addAnswer('Salary?', 'Market rate.', 1_000 + 50 * 60_000)
+
+    const sessions = store.list()
+    expect(sessions.map((s) => [s.title, s.answerCount, s.endedAt !== null])).toEqual([
+      ['Salary?', 1, true],
+      ['Why us?', 2, true]
+    ])
+    expect(store.get(sessions[1].id)?.endedAt).toBe(1_000 + 10 * 60_000)
+  })
+
+  it('does not mix typed answers into a running Listen session', () => {
+    const store = new HistoryStore(dir)
+    store.begin(5_000)
+    store.addAnswer('During the call', 'Answer.', 6_000)
+    store.finish(7_000)
+    expect(store.list().map((s) => s.answerCount)).toEqual([1])
   })
 
   it('autosaves an in-progress session so a crash loses at most a few seconds', () => {

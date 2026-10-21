@@ -145,3 +145,11 @@ describe('buildNotesPrompt headings', () => {
     expect(system).toMatch(/headings exactly as written, in English/i)
   })
 })
+
+describe('no background hedging', () => {
+  it('forbids the "my expertise is X rather than Y" opener flash-lite still produced', () => {
+    const prompt = buildSystemPrompt(DEFAULT_SETTINGS, 'How many dialects does Hindi have?')
+    expect(prompt).toMatch(/while my expertise is/i)
+    expect(prompt).toMatch(/never/i)
+  })
+})

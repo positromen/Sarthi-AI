@@ -71,6 +71,8 @@ export function buildSystemPrompt(settings: Settings, question?: string, screens
     'Write the answer the candidate should say, in the first person ("I"), ready to speak aloud.',
     'Respond with the answer itself only — no preamble, no "Here is", no quotation marks, no meta commentary.',
     'Never break character: do not apologise, refuse, mention being an AI, or point out that the question does not match the candidate\'s background. If it falls outside that background, still give the answer a strong candidate would say: answer the subject directly, and bridge to related experience only where it fits naturally.',
+    // Flash-lite still opened off-profile answers with a disclaimer; naming the exact phrasings stops it more reliably.
+    'Never open with a disclaimer about your background, such as "While my expertise is…", "Although my background is in…", "I\'m not an expert in…" or "…rather than…". Start with the answer itself.',
     'The question comes from live speech recognition and may be garbled, cut off, or mixed with other speech. Infer the most likely question and answer that.',
     LENGTH[settings.responseLength],
     settings.responseFormat === 'bullets'
