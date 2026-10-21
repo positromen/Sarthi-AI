@@ -12,6 +12,11 @@ describe('withDefaults', () => {
     expect(settings).not.toHaveProperty('transcriptionLanguage')
   })
 
+  // In live testing answers felt slower with silence skipped, so audio streams continuously unless opted in.
+  it('leaves Skip silence off by default', () => {
+    expect(withDefaults({}).vadEnabled).toBe(false)
+  })
+
   it('prefers listeningLanguage when both are stored', () => {
     expect(withDefaults({ transcriptionLanguage: 'hi', listeningLanguage: 'multi' }).listeningLanguage).toBe('multi')
   })

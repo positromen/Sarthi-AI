@@ -132,6 +132,14 @@ export function Overlay() {
           <div className="flex gap-4 border-b border-line px-3 py-1.5">
             <LevelMeter label="You (mic)" level={levels.mic} />
             <LevelMeter label="Interviewer" level={levels.system} />
+            {settings?.vadEnabled && (
+              <span
+                className={`ml-auto text-[10px] ${levels.sending ? 'text-leaf' : 'text-white/35'}`}
+                title="Audio goes to Deepgram only around speech (Settings → Skip silence)"
+              >
+                {levels.sending ? '● sending' : '○ silence skipped'}
+              </span>
+            )}
           </div>
         )}
 

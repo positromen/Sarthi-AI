@@ -25,3 +25,14 @@ export function rmsLevel(samples: Float32Array | undefined): number {
   for (const s of samples) sum += s * s
   return Math.sqrt(sum / samples.length)
 }
+
+/** Joins frames, in order, into one buffer (the pre-roll is sent as a single message). */
+export function concatInt16(frames: readonly Int16Array[]): Int16Array {
+  const out = new Int16Array(frames.reduce((total, frame) => total + frame.length, 0))
+  let offset = 0
+  for (const frame of frames) {
+    out.set(frame, offset)
+    offset += frame.length
+  }
+  return out
+}

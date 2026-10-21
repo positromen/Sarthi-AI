@@ -134,6 +134,24 @@ export function SettingsApp() {
           checked={settings.autoAnswer}
           onChange={(autoAnswer) => update({ autoAnswer })}
         />
+        <Toggle
+          label="Skip silence"
+          hint="Off by default. Sends audio to Deepgram only around speech, which saves Deepgram minutes but can make answers feel a little later. Applies the next time you press Listen."
+          checked={settings.vadEnabled}
+          onChange={(vadEnabled) => update({ vadEnabled })}
+        />
+        {settings.vadEnabled && (
+          <Select
+            label="Speech sensitivity"
+            value={settings.vadSensitivity}
+            options={[
+              { value: 'high', label: 'High (quiet voices, low volume)' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'low', label: 'Low (noisy room)' }
+            ]}
+            onChange={(vadSensitivity) => update({ vadSensitivity })}
+          />
+        )}
       </section>
 
       <section className="space-y-3">

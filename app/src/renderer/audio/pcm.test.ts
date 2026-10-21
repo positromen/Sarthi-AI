@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { floatToInt16, interleaveStereoInt16, rmsLevel } from './pcm'
+import { concatInt16, floatToInt16, interleaveStereoInt16, rmsLevel } from './pcm'
+
+describe('concatInt16', () => {
+  it('joins frames in order into one buffer', () => {
+    expect([...concatInt16([Int16Array.of(1, 2), Int16Array.of(3), Int16Array.of(4, 5)])]).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('returns an empty array for no frames', () => {
+    expect(concatInt16([]).length).toBe(0)
+  })
+})
 
 describe('floatToInt16', () => {
   it('maps the float range onto the full Int16 range', () => {

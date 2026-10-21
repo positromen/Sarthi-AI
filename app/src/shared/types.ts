@@ -3,6 +3,8 @@ export type LlmProvider = 'gemini' | 'anthropic'
 export type ResponseLength = 'short' | 'medium' | 'long'
 export type ResponseFormat = 'bullets' | 'paragraph'
 export type ResponseTone = 'professional' | 'conversational' | 'confident'
+/** How readily quiet sound counts as speech when skipping silence. */
+export type VadSensitivity = 'low' | 'normal' | 'high'
 
 export interface Settings {
   privateMode: boolean
@@ -12,6 +14,9 @@ export interface Settings {
   listeningLanguage: string
   /** Language the answer is written in; independent of what the interviewer speaks. */
   outputLanguage: string
+  /** Send audio to Deepgram only around speech (saves Deepgram minutes). */
+  vadEnabled: boolean
+  vadSensitivity: VadSensitivity
   responseLength: ResponseLength
   responseFormat: ResponseFormat
   responseTone: ResponseTone
@@ -30,6 +35,8 @@ export const DEFAULT_SETTINGS: Settings = {
   llmProvider: 'gemini',
   listeningLanguage: 'en',
   outputLanguage: 'en',
+  vadEnabled: false,
+  vadSensitivity: 'normal',
   responseLength: 'medium',
   responseFormat: 'bullets',
   responseTone: 'professional',

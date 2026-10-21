@@ -1,10 +1,13 @@
 import workletUrl from './pcm-worklet.ts?worker&url'
+import type { GateConfig } from './vad'
 
 export const CAPTURE_SAMPLE_RATE = 16000
 
 export interface AudioLevels {
   mic: number
   system: number
+  /** Whether audio is currently going to Deepgram (false while silence is being skipped). */
+  sending: boolean
 }
 
 export interface Capture {
@@ -17,7 +20,8 @@ export interface Capture {
  */
 export async function startCapture(
   onFrame: (pcm: ArrayBuffer) => void,
-  onLevels: (levels: AudioLevels) => void
+  onLevels: (levels: AudioLevels) => void,
+  gate: GateConfig
 ): Promise<Capture> {
   const mic = await navigator.mediaDevices.getUserMedia({
     audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
@@ -48,11 +52,12 @@ export async function startCapture(
     numberOfOutputs: 1,
     channelCount: 2,
     channelCountMode: 'explicit',
-    channelInterpretation: 'discrete'
+    channelInterpretation: 'discrete',
+    processorOptions: { gate }
   })
   framer.port.onmessage = ({ data }) => {
-    onFrame(data.pcm)
-    onLevels({ mic: data.micLevel, system: data.systemLevel })
+    if (data.pcm) onFrame(data.pcm)
+    onLevels({ mic: data.micLevel, system: data.systemLevel, sending: data.sending })
   }
   merger.connect(framer)
   // Keep the graph pulled without playing anything back.

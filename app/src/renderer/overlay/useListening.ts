@@ -8,7 +8,7 @@ export function useListening() {
   const [session, setSession] = useState<SessionState>({ status: 'idle' })
   const [turns, setTurns] = useState<TranscriptTurn[]>([])
   const [interim, setInterim] = useState<Partial<Record<Speaker, string>>>({})
-  const [levels, setLevels] = useState<AudioLevels>({ mic: 0, system: 0 })
+  const [levels, setLevels] = useState<AudioLevels>({ mic: 0, system: 0, sending: false })
   const capture = useRef<Capture | null>(null)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export function useListening() {
   const stopCapture = useCallback(() => {
     capture.current?.stop()
     capture.current = null
-    setLevels({ mic: 0, system: 0 })
+    setLevels({ mic: 0, system: 0, sending: false })
   }, [])
 
   // The main process can end the session on its own (network error, bad key); release the devices then.
@@ -44,7 +44,11 @@ export function useListening() {
     const state = await window.sarthi.startSession()
     if (state.status === 'error') return
     try {
-      capture.current = await startCapture((pcm) => window.sarthi.sendAudioFrame(pcm), setLevels)
+      const settings = await window.sarthi.getSettings()
+      capture.current = await startCapture((pcm) => window.sarthi.sendAudioFrame(pcm), setLevels, {
+        enabled: settings.vadEnabled,
+        sensitivity: settings.vadSensitivity
+      })
     } catch (error) {
       await window.sarthi.stopSession()
       setSession({ status: 'error', error: `Audio capture failed: ${(error as Error).message}` })

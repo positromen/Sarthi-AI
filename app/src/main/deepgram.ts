@@ -3,13 +3,19 @@ import { SPEAKER_BY_CHANNEL, type Speaker } from '../shared/types'
 
 export const SAMPLE_RATE = 16000
 export const CHANNELS = 2
-const KEEPALIVE_MS = 8000
+// Deepgram closes a stream after ~10 s without data. The renderer skips silence, so KeepAlive must hold the
+// connection through long quiet stretches; Deepgram recommends every 3–5 s.
+const KEEPALIVE_MS = 4000
+// Frames arrive every ~50 ms while audio flows. A longer gap means the renderer's speech gate closed.
+const AUDIO_GAP_MS = 500
 
 interface ResultsMessage {
   type: 'Results'
   channel_index: [number, number]
   is_final: boolean
   speech_final: boolean
+  /** Set on results produced by our Finalize message. */
+  from_finalize?: boolean
   channel: { alternatives: { transcript: string }[] }
 }
 
@@ -50,6 +56,7 @@ export function buildListenUrl(language: string): string {
 export class DeepgramStream extends EventEmitter<DeepgramEvents> {
   private socket: WebSocket | null = null
   private keepAlive: NodeJS.Timeout | null = null
+  private audioGap: NodeJS.Timeout | null = null
   private pending: string[][] = SPEAKER_BY_CHANNEL.map(() => [])
 
   connect(apiKey: string, language: string): void {
@@ -72,7 +79,15 @@ export class DeepgramStream extends EventEmitter<DeepgramEvents> {
   }
 
   send(frame: ArrayBuffer): void {
-    if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(frame)
+    if (this.socket?.readyState !== WebSocket.OPEN) return
+    this.socket.send(frame)
+    // When audio stops (silence skipped), have Deepgram finalize what it heard. The gate already sends enough
+    // trailing silence for a normal turn end; this is the backstop so no words sit pending until the next burst.
+    if (this.audioGap) clearTimeout(this.audioGap)
+    this.audioGap = setTimeout(() => {
+      this.audioGap = null
+      this.sendJson({ type: 'Finalize' })
+    }, AUDIO_GAP_MS)
   }
 
   close(): void {
@@ -89,7 +104,7 @@ export class DeepgramStream extends EventEmitter<DeepgramEvents> {
       const text = result.channel.alternatives[0]?.transcript.trim() ?? ''
       if (result.is_final) {
         if (text) this.pending[channel].push(text)
-        if (result.speech_final) this.flush(channel)
+        if (result.speech_final || result.from_finalize) this.flush(channel)
         else if (text) this.emit('interim', SPEAKER_BY_CHANNEL[channel], this.pending[channel].join(' '))
       } else if (text) {
         this.emit('interim', SPEAKER_BY_CHANNEL[channel], [...this.pending[channel], text].join(' '))
@@ -112,6 +127,8 @@ export class DeepgramStream extends EventEmitter<DeepgramEvents> {
   private cleanup(): void {
     if (this.keepAlive) clearInterval(this.keepAlive)
     this.keepAlive = null
+    if (this.audioGap) clearTimeout(this.audioGap)
+    this.audioGap = null
     this.socket = null
   }
 }
