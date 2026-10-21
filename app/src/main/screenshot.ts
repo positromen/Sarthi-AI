@@ -2,6 +2,7 @@ import { desktopCapturer, screen } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { ScreenshotInfo } from '../shared/types'
 import type { LlmImage } from './llm-types'
+import { getSettings } from './store'
 import { broadcast } from './windows'
 
 // Every kept screenshot rides along with each answer request, so cap how many we hold.
@@ -33,6 +34,7 @@ function publish(): ScreenshotInfo[] {
  * content-protected, so they are left out of the shot.
  */
 export async function captureScreenshot(): Promise<ScreenshotInfo[]> {
+  if (!getSettings().screenshotsEnabled) throw new Error('Screenshots are turned off in Settings.')
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
   // The thumbnail is scaled to fit this box with its aspect ratio kept, so it doubles as the downscale.
   const sources = await desktopCapturer.getSources({

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, session } from 'electron'
 import { basename, join } from 'node:path'
 import { IPC } from '../shared/ipc'
-import type { ApiKeyName, Settings } from '../shared/types'
+import { API_KEY_NAMES, type ApiKeyName, type Settings } from '../shared/types'
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { getHistory, initHistory } from './history'
@@ -16,7 +16,8 @@ import {
   createOverlayWindow,
   openSettingsWindow,
   setOverlayInteractive,
-  setPrivateMode
+  setPrivateMode,
+  showOverlay
 } from './windows'
 
 if (!app.requestSingleInstanceLock()) app.quit()
@@ -66,7 +67,12 @@ function registerIpc(): void {
     return settings
   })
   ipcMain.handle(IPC.getKeyStatus, () => getKeyStatus())
-  ipcMain.handle(IPC.setKey, (_e, name: ApiKeyName, value: string) => setKey(name, value))
+  ipcMain.handle(IPC.setKey, (_e, name: ApiKeyName, value: string) => {
+    if (!API_KEY_NAMES.includes(name) || typeof value !== 'string') throw new Error('Unknown API key.')
+    const status = setKey(name, value)
+    broadcast(IPC.keysChanged, status)
+    return status
+  })
   ipcMain.handle(IPC.startSession, () => startSession())
   ipcMain.handle(IPC.stopSession, () => stopSession())
   ipcMain.handle(IPC.sessionState, () => getSessionState())
@@ -85,7 +91,8 @@ function registerIpc(): void {
   ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))
-  ipcMain.on(IPC.openSettings, () => openSettingsWindow())
+  ipcMain.on(IPC.openSettings, (_e, page?: unknown) => openSettingsWindow(typeof page === 'string' ? page : undefined))
+  ipcMain.on(IPC.showOverlay, () => showOverlay())
 }
 
 app.on('second-instance', () => openSettingsWindow())

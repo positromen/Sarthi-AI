@@ -1,5 +1,6 @@
 import { app, BrowserWindow, screen, shell } from 'electron'
 import { join } from 'node:path'
+import { IPC } from '../shared/ipc'
 import { getSettings } from './store'
 
 const OVERLAY_WIDTH = 520
@@ -10,11 +11,15 @@ const MOVE_STEP = 40
 let overlay: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
 
-function loadPage(win: BrowserWindow, page: 'overlay' | 'settings'): void {
+/** `hash` picks the Control Center page, e.g. "setup" opens settings.html#setup. */
+function loadPage(win: BrowserWindow, page: 'overlay' | 'settings', hash?: string): void {
   const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (!app.isPackaged && devUrl) win.loadURL(`${devUrl}/${page}.html`)
-  else win.loadFile(join(__dirname, `../renderer/${page}.html`))
+  if (!app.isPackaged && devUrl) win.loadURL(`${devUrl}/${page}.html${hash ? `#${hash}` : ''}`)
+  else win.loadFile(join(__dirname, `../renderer/${page}.html`), hash ? { hash } : undefined)
 }
+
+// Page names come from renderer IPC; only plain slugs become part of a URL.
+const PAGE_SLUG = /^[a-z][a-z-]{0,30}$/
 
 const preloadPath = () => join(__dirname, '../preload/index.js')
 
@@ -76,6 +81,11 @@ export function setOverlayInteractive(interactive: boolean): void {
   getOverlay()?.setIgnoreMouseEvents(!interactive, { forward: true })
 }
 
+/** "Show overlay" from the Control Center: bring it back without taking focus. */
+export function showOverlay(): void {
+  getOverlay()?.showInactive()
+}
+
 export function toggleOverlayVisible(): void {
   const win = getOverlay()
   if (!win) return
@@ -98,8 +108,11 @@ export function moveOverlay(dx: number, dy: number): void {
   win.setPosition(x + dx * MOVE_STEP, y + dy * MOVE_STEP)
 }
 
-export function openSettingsWindow(): void {
+/** Opens (or focuses) the Control Center, optionally on a page such as "setup" or "history". */
+export function openSettingsWindow(page?: string): void {
+  const target = page && PAGE_SLUG.test(page) ? page : undefined
   if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (target) settingsWindow.webContents.send(IPC.navigate, target)
     settingsWindow.show()
     settingsWindow.focus()
     return
@@ -107,13 +120,20 @@ export function openSettingsWindow(): void {
   settingsWindow = new BrowserWindow({
     width: 900,
     height: 720,
+    minWidth: 760,
+    minHeight: 560,
     title: 'Sarthi AI',
     autoHideMenuBar: true,
     backgroundColor: '#0b0f0c',
     webPreferences: { preload: preloadPath() }
   })
   settingsWindow.setContentProtection(getSettings().privateMode)
-  loadPage(settingsWindow, 'settings')
+  // Links in the Control Center (key consoles) open in the browser, never inside the app.
+  settingsWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https:\/\//.test(url)) shell.openExternal(url)
+    return { action: 'deny' }
+  })
+  loadPage(settingsWindow, 'settings', target)
 }
 
 export function broadcast(channel: string, ...args: unknown[]): void {

@@ -32,7 +32,11 @@ const api = {
   onHotkey: (callback: (key: Hotkey) => void) => subscribe(IPC.hotkey, callback),
   setOverlayInteractive: (interactive: boolean) =>
     ipcRenderer.send(IPC.setOverlayInteractive, interactive),
-  openSettings: () => ipcRenderer.send(IPC.openSettings),
+  /** Opens the Control Center, optionally on a page ("setup", "history", …). */
+  openSettings: (page?: string) => ipcRenderer.send(IPC.openSettings, page),
+  onNavigate: (callback: (page: string) => void) => subscribe(IPC.navigate, callback),
+  showOverlay: () => ipcRenderer.send(IPC.showOverlay),
+  onKeysChanged: (callback: (status: ApiKeyStatus) => void) => subscribe(IPC.keysChanged, callback),
   startSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.startSession),
   stopSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.stopSession),
   getSessionState: (): Promise<SessionState> => ipcRenderer.invoke(IPC.sessionState),

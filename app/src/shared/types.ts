@@ -24,6 +24,10 @@ export interface Settings {
   useStarMethod: boolean
   useFillerWords: boolean
   overlayOpacity: number
+  /** Answer-only overlay: a one-line question header and the answer, nothing else. */
+  overlayCompact: boolean
+  /** Allow screenshots (hotkey, overlay button) and send them with answers. */
+  screenshotsEnabled: boolean
   /** Profile the answer engine draws on for tailored, specific answers. Plain text for now (PDF import later). */
   resume: string
   jobDescription: string
@@ -44,6 +48,8 @@ export const DEFAULT_SETTINGS: Settings = {
   useStarMethod: true,
   useFillerWords: false,
   overlayOpacity: 0.92,
+  overlayCompact: false,
+  screenshotsEnabled: true,
   resume: '',
   jobDescription: '',
   notes: ''
@@ -58,7 +64,10 @@ export function withDefaults(stored: Record<string, unknown>): Settings {
 
 export type Hotkey ='answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
 
-export type ApiKeyName = 'deepgram' | 'gemini' | 'groq' | 'anthropic'
+export const API_KEY_NAMES = ['deepgram', 'gemini', 'groq', 'anthropic'] as const
+export type ApiKeyName = (typeof API_KEY_NAMES)[number]
+/** Keys the app needs before it can listen and answer (onboarding asks for all three). */
+export const REQUIRED_KEYS: readonly ApiKeyName[] = ['deepgram', 'gemini', 'groq']
 export type ApiKeyStatus = Record<ApiKeyName, boolean>
 
 /** Channel 0 of the stereo stream is the mic, channel 1 is system loopback audio. */

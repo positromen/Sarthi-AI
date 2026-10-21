@@ -26,7 +26,8 @@ export function getAnswerState(): AnswerState {
 }
 
 export async function generateAnswer(question: string, context: readonly TranscriptTurn[]): Promise<void> {
-  const images = getScreenshotImages()
+  // Screenshots taken earlier stay in the strip, but are only sent while the setting allows them.
+  const images = getSettings().screenshotsEnabled ? getScreenshotImages() : []
   const q = question.trim() || (images.length > 0 ? SCREEN_QUESTION : '')
   if (!q) {
     setState({ status: 'error', text: '', question: null, error: 'No interviewer question yet — start listening, or take a screenshot (Ctrl+Shift+C).' })
