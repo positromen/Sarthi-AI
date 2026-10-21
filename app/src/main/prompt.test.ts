@@ -115,3 +115,26 @@ describe('buildNotesPrompt', () => {
     expect(user.length).toBeLessThan(70_000)
   })
 })
+
+describe('question modes', () => {
+  it('uses STAR only for behavioral questions, when STAR is on', () => {
+    const settings = { ...DEFAULT_SETTINGS, useStarMethod: true }
+    expect(buildSystemPrompt(settings, 'Tell me about a time you failed')).toMatch(/STAR/)
+    expect(buildSystemPrompt(settings, 'How would you design a cache?')).not.toMatch(/STAR/)
+    expect(buildSystemPrompt({ ...settings, useStarMethod: false }, 'Tell me about a time you failed')).not.toMatch(/STAR/)
+  })
+
+  it('leads technical answers with the direct answer and trade-offs', () => {
+    expect(buildSystemPrompt(DEFAULT_SETTINGS, 'How would you design a cache?')).toMatch(/trade-offs/i)
+  })
+
+  it('asks coding answers for approach, fenced code and complexity', () => {
+    const prompt = buildSystemPrompt(DEFAULT_SETTINGS, 'Solve this', 1)
+    expect(prompt).toMatch(/fenced code block/i)
+    expect(prompt).toMatch(/complexity/i)
+  })
+
+  it('always explains the formatting the overlay can render, including LaTeX math', () => {
+    expect(buildSystemPrompt(DEFAULT_SETTINGS, 'Tell me about yourself')).toMatch(/LaTeX/)
+  })
+})

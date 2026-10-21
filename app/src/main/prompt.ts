@@ -1,5 +1,6 @@
 import { OUTPUT_LANGUAGES } from '../shared/languages'
 import type { Settings, TranscriptTurn } from '../shared/types'
+import { classifyQuestion, type QuestionMode } from './question'
 import { selectProfile } from './rag'
 
 // How many recent transcript turns to hand the model as conversation context.
@@ -33,8 +34,38 @@ function languageInstruction(code: string): string {
 const transcriptLine = (turn: TranscriptTurn): string =>
   `${turn.speaker === 'you' ? 'Me' : 'Interviewer'}: ${turn.text}`
 
-/** With `question`, a large profile is narrowed to the parts relevant to it (see rag.ts). */
-export function buildSystemPrompt(settings: Settings, question?: string): string {
+// What the overlay renders (see renderer/overlay/markdown.ts); anything else shows as plain text.
+const FORMATTING =
+  'Formatting: use **bold** sparingly for key terms, `backticks` for identifiers, fenced code blocks with a language tag for code, and LaTeX between $…$ for math (for example $O(n \\log n)$).'
+
+const STAR =
+  'Structure the answer with the STAR method (Situation, Task, Action, Result) without labeling the parts.'
+
+const MODE_GUIDE: Record<Exclude<QuestionMode, 'behavioral' | 'general'>, string> = {
+  technical:
+    'This is a technical question: lead with the direct answer, then the key trade-offs, then a concrete example from my experience if there is one.',
+  coding:
+    'This is a coding question: give the approach in one or two sentences, then working code in a fenced code block with a language tag, then the time and space complexity.'
+}
+
+function modeInstruction(mode: QuestionMode | null, useStar: boolean): string | null {
+  if (mode === 'technical' || mode === 'coding') return MODE_GUIDE[mode]
+  if (mode === 'behavioral') {
+    return useStar
+      ? `This is a behavioral question. ${STAR}`
+      : 'This is a behavioral question: tell it as one concrete story of what happened, what I did, and the result.'
+  }
+  // No question known (e.g. a preview of the prompt): keep the general STAR rule.
+  if (mode === null && useStar) return `When the question is behavioral ("tell me about a time..."), ${STAR.charAt(0).toLowerCase()}${STAR.slice(1)}`
+  return null
+}
+
+/**
+ * With `question`, the answer shape follows its mode (behavioral, technical, coding; screenshots mean coding) and a
+ * large profile is narrowed to the parts relevant to it (see rag.ts).
+ */
+export function buildSystemPrompt(settings: Settings, question?: string, screenshots = 0): string {
+  const mode = question ? classifyQuestion(question, { screenshots }) : null
   const lines = [
     'You are an interview copilot. The user is a candidate in a live job interview and the interviewer has just asked something.',
     'Write the answer the candidate should say, in the first person ("I"), ready to speak aloud.',
@@ -46,13 +77,11 @@ export function buildSystemPrompt(settings: Settings, question?: string): string
       ? 'Format the answer as short bullet points, one per line starting with "- ".'
       : 'Format the answer as flowing prose paragraphs, not bullets.',
     TONE[settings.responseTone],
-    languageInstruction(settings.outputLanguage)
+    languageInstruction(settings.outputLanguage),
+    FORMATTING
   ]
-  if (settings.useStarMethod) {
-    lines.push(
-      'When the question is behavioral ("tell me about a time..."), structure the answer with the STAR method (Situation, Task, Action, Result) without labeling the parts.'
-    )
-  }
+  const modeLine = modeInstruction(mode, settings.useStarMethod)
+  if (modeLine) lines.push(modeLine)
   if (settings.useFillerWords) {
     lines.push('Add a few light, natural spoken fillers so it sounds human, not scripted.')
   } else {

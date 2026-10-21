@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Speaker } from '../../shared/types'
 import { useSettings } from '../useSettings'
+import { AnswerContent } from './AnswerContent'
 import { useAnswer } from './useAnswer'
 import { useListening } from './useListening'
 import { useScreenshots } from './useScreenshots'
@@ -193,7 +194,7 @@ export function Overlay() {
           ) : answer.status === 'thinking' ? (
             <span className="text-white/50">Thinking…</span>
           ) : answer.text ? (
-            <p className="whitespace-pre-wrap">{answer.text}</p>
+            <AnswerContent text={answer.text} streaming={answer.status === 'streaming'} />
           ) : (
             <span className="text-white/40">
               Press Ctrl+Shift+Enter for an answer{settings?.autoAnswer ? ', or wait for a question.' : '.'}

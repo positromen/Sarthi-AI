@@ -45,7 +45,7 @@ export async function generateAnswer(question: string, context: readonly Transcr
     let text = ''
     const request = {
       provider: settings.llmProvider,
-      system: buildSystemPrompt(settings, q),
+      system: buildSystemPrompt(settings, q, images.length),
       user: buildUserPrompt(q, context, { screenshots: images.length, outputLanguage: settings.outputLanguage }),
       images,
       signal: ctrl.signal
