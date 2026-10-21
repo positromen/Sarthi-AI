@@ -69,6 +69,8 @@ export type ApiKeyName = (typeof API_KEY_NAMES)[number]
 /** Keys the app needs before it can listen and answer (onboarding asks for all three). */
 export const REQUIRED_KEYS: readonly ApiKeyName[] = ['deepgram', 'gemini', 'groq']
 export type ApiKeyStatus = Record<ApiKeyName, boolean>
+/** Result of testing a key with its provider before saving it. */
+export type KeyCheck = { ok: true; warning?: string } | { ok: false; message: string }
 
 /** Channel 0 of the stereo stream is the mic, channel 1 is system loopback audio. */
 export type Speaker = 'you' | 'interviewer'

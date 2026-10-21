@@ -28,5 +28,7 @@ export const IPC = {
   historyChanged: 'history:changed',
   keysChanged: 'keys:changed',
   navigate: 'settings:navigate',
-  showOverlay: 'window:show-overlay'
+  showOverlay: 'window:show-overlay',
+  validateKey: 'keys:validate',
+  getAppInfo: 'app:info'
 } as const

@@ -6,6 +6,7 @@ import type {
   ApiKeyStatus,
   Hotkey,
   InterimTranscript,
+  KeyCheck,
   ScreenshotInfo,
   SessionRecord,
   SessionState,
@@ -37,6 +38,9 @@ const api = {
   onNavigate: (callback: (page: string) => void) => subscribe(IPC.navigate, callback),
   showOverlay: () => ipcRenderer.send(IPC.showOverlay),
   onKeysChanged: (callback: (status: ApiKeyStatus) => void) => subscribe(IPC.keysChanged, callback),
+  /** Tests a key with its provider before saving: { ok, warning? } or { ok: false, message }. */
+  validateKey: (name: ApiKeyName, value: string): Promise<KeyCheck> => ipcRenderer.invoke(IPC.validateKey, name, value),
+  getAppInfo: (): Promise<{ version: string; platform: string }> => ipcRenderer.invoke(IPC.getAppInfo),
   startSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.startSession),
   stopSession: (): Promise<SessionState> => ipcRenderer.invoke(IPC.stopSession),
   getSessionState: (): Promise<SessionState> => ipcRenderer.invoke(IPC.sessionState),

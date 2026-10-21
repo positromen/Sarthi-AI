@@ -11,6 +11,7 @@ import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, migrateLegacySettings, updateSettings } from './store'
+import { validateKey } from './validate-keys'
 import {
   broadcast,
   createOverlayWindow,
@@ -73,6 +74,11 @@ function registerIpc(): void {
     broadcast(IPC.keysChanged, status)
     return status
   })
+  ipcMain.handle(IPC.validateKey, (_e, name: ApiKeyName, value: string) => {
+    if (!API_KEY_NAMES.includes(name) || typeof value !== 'string') throw new Error('Unknown API key.')
+    return validateKey(name, value)
+  })
+  ipcMain.handle(IPC.getAppInfo, () => ({ version: app.getVersion(), platform: process.platform }))
   ipcMain.handle(IPC.startSession, () => startSession())
   ipcMain.handle(IPC.stopSession, () => stopSession())
   ipcMain.handle(IPC.sessionState, () => getSessionState())

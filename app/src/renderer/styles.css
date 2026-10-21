@@ -88,16 +88,19 @@ body,
   margin: 0;
 }
 
+/* Dark native controls (scrollbars, range inputs, autofill) to match the dark-only theme. */
 .overlay-body {
   background: transparent;
   overflow: hidden;
   font-family: var(--font-sans);
+  color-scheme: dark;
 }
 
 .settings-body {
   background: var(--color-ink);
   color: var(--color-fg);
   font-family: var(--font-sans);
+  color-scheme: dark;
 }
 
 /* Reduced motion: transitions drop to 0 ms, the caret stops blinking and the thinking sweep becomes a static bar.
