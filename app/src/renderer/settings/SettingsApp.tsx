@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { LISTENING_LANGUAGES, OUTPUT_LANGUAGES } from '../../shared/languages'
 import { useSettings } from '../useSettings'
 import { ApiKeys } from './ApiKeys'
 
@@ -131,6 +132,25 @@ export function SettingsApp() {
           hint="Answer automatically when the interviewer asks a question. Off = press Ctrl+Shift+Enter."
           checked={settings.autoAnswer}
           onChange={(autoAnswer) => update({ autoAnswer })}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Language</h2>
+        <p className="text-sm text-white/50">
+          Listening applies the next time you press Listen. Answers can be in a different language from the call.
+        </p>
+        <Select
+          label="Listening language"
+          value={settings.listeningLanguage}
+          options={[...LISTENING_LANGUAGES]}
+          onChange={(listeningLanguage) => update({ listeningLanguage })}
+        />
+        <Select
+          label="Answer language"
+          value={settings.outputLanguage}
+          options={[...OUTPUT_LANGUAGES]}
+          onChange={(outputLanguage) => update({ outputLanguage })}
         />
       </section>
 

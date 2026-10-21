@@ -51,7 +51,7 @@ export function startSession(): SessionState {
     stream = null
     if (state.status !== 'error') setState({ status: 'idle' })
   })
-  stream.connect(apiKey, getSettings().transcriptionLanguage)
+  stream.connect(apiKey, getSettings().listeningLanguage)
   return setState({ status: 'connecting' })
 }
 

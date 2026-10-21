@@ -21,6 +21,18 @@ describe('buildSystemPrompt', () => {
     expect(prompt).not.toMatch(/STAR/)
   })
 
+  it('always answers in character, even off-profile or from a garbled transcript', () => {
+    const prompt = buildSystemPrompt({ ...DEFAULT_SETTINGS, resume: 'OT security engineer' })
+    expect(prompt).toMatch(/never break character/i)
+    expect(prompt).toMatch(/speech recognition/i)
+  })
+
+  it('asks for the answer in the chosen output language', () => {
+    expect(buildSystemPrompt({ ...DEFAULT_SETTINGS })).toMatch(/answer in English/)
+    expect(buildSystemPrompt({ ...DEFAULT_SETTINGS, outputLanguage: 'hi' })).toMatch(/answer in Hindi/)
+    expect(buildSystemPrompt({ ...DEFAULT_SETTINGS, outputLanguage: 'hinglish' })).toMatch(/Hinglish.*Roman/)
+  })
+
   it('includes profile text when provided and omits empty profile sections', () => {
     const withProfile = buildSystemPrompt({ ...DEFAULT_SETTINGS, resume: 'Senior engineer at Acme', jobDescription: '', notes: '' })
     expect(withProfile).toContain('Senior engineer at Acme')
@@ -45,8 +57,15 @@ describe('buildUserPrompt', () => {
   })
 
   it('mentions attached screenshots only when there are some', () => {
-    expect(buildUserPrompt('Solve this.', [], 2)).toMatch(/2 screenshots/)
-    expect(buildUserPrompt('Solve this.', [], 1)).toMatch(/1 screenshot\b/)
+    expect(buildUserPrompt('Solve this.', [], { screenshots: 2 })).toMatch(/2 screenshots/)
+    expect(buildUserPrompt('Solve this.', [], { screenshots: 1 })).toMatch(/1 screenshot\b/)
     expect(buildUserPrompt('Solve this.', [])).not.toMatch(/screenshot/i)
+  })
+
+  // A fully Hindi transcript pulled flash-lite into Hindi despite the system prompt; repeat the rule last.
+  it('ends with the answer-language rule, even for a question in another language', () => {
+    const prompt = buildUserPrompt('भारत का शेक्सपियर किसे कहा जाता है?', [], { outputLanguage: 'en' })
+    expect(prompt.split('\n').at(-1)).toMatch(/answer in English/)
+    expect(buildUserPrompt('Why this role?', [], { outputLanguage: 'hi' })).toMatch(/answer in Hindi/)
   })
 })

@@ -8,7 +8,10 @@ export interface Settings {
   privateMode: boolean
   autoAnswer: boolean
   llmProvider: LlmProvider
-  transcriptionLanguage: string
+  /** Deepgram language code the call is transcribed in (see shared/languages.ts). */
+  listeningLanguage: string
+  /** Language the answer is written in; independent of what the interviewer speaks. */
+  outputLanguage: string
   responseLength: ResponseLength
   responseFormat: ResponseFormat
   responseTone: ResponseTone
@@ -25,7 +28,8 @@ export const DEFAULT_SETTINGS: Settings = {
   privateMode: true,
   autoAnswer: true,
   llmProvider: 'gemini',
-  transcriptionLanguage: 'en',
+  listeningLanguage: 'en',
+  outputLanguage: 'en',
   responseLength: 'medium',
   responseFormat: 'bullets',
   responseTone: 'professional',
@@ -37,7 +41,14 @@ export const DEFAULT_SETTINGS: Settings = {
   notes: ''
 }
 
-export type Hotkey = 'answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
+/** Stored settings merged over the defaults, upgrading fields renamed in earlier versions. */
+export function withDefaults(stored: Record<string, unknown>): Settings {
+  const { transcriptionLanguage, ...rest } = stored
+  const upgraded = typeof transcriptionLanguage === 'string' ? { listeningLanguage: transcriptionLanguage, ...rest } : rest
+  return { ...DEFAULT_SETTINGS, ...upgraded } as Settings
+}
+
+export type Hotkey ='answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
 
 export type ApiKeyName = 'deepgram' | 'gemini' | 'anthropic'
 export type ApiKeyStatus = Record<ApiKeyName, boolean>

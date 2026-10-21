@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { copyFileSync, existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { DEFAULT_SETTINGS, type Settings } from '../shared/types'
+import { DEFAULT_SETTINGS, withDefaults, type Settings } from '../shared/types'
 
 const settingsPath = () => join(app.getPath('userData'), 'settings.json')
 
@@ -25,7 +25,7 @@ let cache: Settings | null = null
 export function getSettings(): Settings {
   if (cache) return cache
   try {
-    cache = { ...DEFAULT_SETTINGS, ...JSON.parse(readFileSync(settingsPath(), 'utf8')) }
+    cache = withDefaults(JSON.parse(readFileSync(settingsPath(), 'utf8')))
   } catch {
     cache = { ...DEFAULT_SETTINGS }
   }
