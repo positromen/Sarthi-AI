@@ -325,7 +325,9 @@ function Thinking({ provider }: { provider: string }) {
       <div className="text-[11.5px] leading-[1.45] text-pretty text-fg-3">
         {provider === 'groq'
           ? 'Groq usually starts within a couple of seconds.'
-          : 'The free tier can take up to a minute to start. Once it does, the answer arrives in a couple of seconds.'}
+          : provider === 'anthropic'
+            ? 'Claude usually starts within a few seconds.'
+            : 'The free tier can take up to a minute to start. Once it does, the answer arrives in a couple of seconds.'}
       </div>
     </div>
   )

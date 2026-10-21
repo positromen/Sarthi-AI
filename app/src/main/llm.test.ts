@@ -6,12 +6,14 @@ import { streamAnswer, type ProviderStreams } from './llm'
 type Call = { provider: string; apiKey: string; images: number }
 
 /** Fake providers: each either streams its reply or throws (optionally after some text). */
-function fakes(behaviour: Record<'gemini' | 'groq', string | Error | { partial: string; then: Error }>) {
+type Name = 'gemini' | 'groq' | 'anthropic'
+
+function fakes(behaviour: Partial<Record<Name, string | Error | { partial: string; then: Error }>>) {
   const calls: Call[] = []
-  const make = (provider: 'gemini' | 'groq') =>
+  const make = (provider: Name) =>
     async function* (req: LlmRequest): AsyncGenerator<string> {
       calls.push({ provider, apiKey: req.apiKey, images: req.images?.length ?? 0 })
-      const b = behaviour[provider]
+      const b = behaviour[provider] ?? provider.charAt(0).toUpperCase()
       if (b instanceof Error) throw b
       if (typeof b === 'string') {
         yield b
@@ -20,7 +22,7 @@ function fakes(behaviour: Record<'gemini' | 'groq', string | Error | { partial: 
       yield b.partial
       throw b.then
     }
-  const streams: ProviderStreams = { gemini: make('gemini'), groq: make('groq') }
+  const streams: ProviderStreams = { gemini: make('gemini'), groq: make('groq'), anthropic: make('anthropic') }
   return { calls, streams }
 }
 
@@ -87,5 +89,32 @@ describe('streamAnswer', () => {
       collect(streamAnswer({ ...base, provider: 'gemini', signal: controller.signal }, keys('gemini', 'groq'), f.streams))
     ).rejects.toThrow('aborted')
     expect(f.calls.map((c) => c.provider)).toEqual(['gemini'])
+  })
+
+  it('uses Claude when chosen, and falls back to Gemini then Groq', async () => {
+    const a = fakes({ anthropic: 'C' })
+    expect(await collect(streamAnswer({ ...base, provider: 'anthropic' }, keys('gemini', 'groq', 'anthropic'), a.streams))).toBe('C')
+    expect(a.calls).toEqual([{ provider: 'anthropic', apiKey: 'anthropic-key', images: 0 }])
+
+    const b = fakes({ anthropic: new Error('Claude declined'), gemini: new Error('Gemini down') })
+    expect(await collect(streamAnswer({ ...base, provider: 'anthropic' }, keys('gemini', 'groq', 'anthropic'), b.streams))).toBe('G')
+    expect(b.calls.map((c) => c.provider)).toEqual(['anthropic', 'gemini', 'groq'])
+  })
+
+  it('leaves Claude out unless it has a key, and tries it last when another provider is chosen', async () => {
+    const a = fakes({ gemini: new Error('Gemini down'), groq: new Error('Groq down') })
+    await expect(collect(streamAnswer({ ...base, provider: 'gemini' }, keys('gemini', 'groq'), a.streams))).rejects.toThrow('Gemini down')
+    expect(a.calls.map((c) => c.provider)).toEqual(['gemini', 'groq'])
+
+    const b = fakes({ gemini: new Error('Gemini down'), groq: new Error('Groq down') })
+    expect(await collect(streamAnswer({ ...base, provider: 'groq' }, keys('gemini', 'groq', 'anthropic'), b.streams))).toBe('A')
+    expect(b.calls.map((c) => c.provider)).toEqual(['groq', 'gemini', 'anthropic'])
+  })
+
+  it('sends screenshots Gemini first, then Claude, then Groq', async () => {
+    const images = [{ mimeType: 'image/jpeg', data: 'x' }]
+    const f = fakes({ gemini: new Error('Gemini down') })
+    expect(await collect(streamAnswer({ ...base, provider: 'groq', images }, keys('gemini', 'groq', 'anthropic'), f.streams))).toBe('A')
+    expect(f.calls.map((c) => c.provider)).toEqual(['gemini', 'anthropic'])
   })
 })

@@ -43,9 +43,26 @@ describe('validateKey', () => {
     expect(await validateKey('gemini', 'k', respond(503))).toMatchObject({ ok: true, warning: expect.any(String) })
   })
 
-  it('does not call out for keys it has no check for', async () => {
-    const fetchMock = respond(200)
-    expect(await validateKey('anthropic', 'k', fetchMock)).toEqual({ ok: true })
-    expect(fetchMock).not.toHaveBeenCalled()
+  it('checks an Anthropic key by listing models through the SDK, key in the x-api-key header', async () => {
+    const fetchMock = vi.fn(async () => Response.json({ data: [], has_more: false, first_id: null, last_id: null }))
+    expect(await validateKey('anthropic', 'sk-ant-k', fetchMock)).toEqual({ ok: true })
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(new URL(url).host).toBe('api.anthropic.com')
+    expect(new URL(url).pathname).toBe('/v1/models')
+    expect(url).not.toContain('sk-ant-k')
+    expect(new Headers(init.headers).get('x-api-key')).toBe('sk-ant-k')
+  })
+
+  it('rejects an Anthropic key it refuses, without retrying, and only warns when unreachable', async () => {
+    const refused = vi.fn(async () =>
+      Response.json({ type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } }, { status: 401 })
+    )
+    expect(await validateKey('anthropic', 'k', refused)).toEqual({ ok: false, message: 'Anthropic rejected this key (401).' })
+    expect(refused).toHaveBeenCalledTimes(1)
+
+    const offline = vi.fn(async () => {
+      throw new TypeError('fetch failed')
+    })
+    expect(await validateKey('anthropic', 'k', offline)).toMatchObject({ ok: true, warning: expect.stringMatching(/couldn.t check/i) })
   })
 })

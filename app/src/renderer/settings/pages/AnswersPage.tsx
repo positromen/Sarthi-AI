@@ -42,7 +42,7 @@ export function AnswersPage({ settings, update }: { settings: Settings; update: 
         >
           <Toggle label="Auto-answer" checked={settings.autoAnswer} onChange={(autoAnswer) => update({ autoAnswer })} />
         </Row>
-        <Row label="AI provider" hint="Gemini is the default. Groq starts answering in about a second. If one fails, the other takes over.">
+        <Row label="AI provider" hint="Gemini is the default. Groq starts answering in about a second. Claude needs a paid Anthropic key. If one fails, the next takes over.">
           <Select<LlmProvider>
             label="AI provider"
             className="w-52"
@@ -51,7 +51,7 @@ export function AnswersPage({ settings, update }: { settings: Settings; update: 
             options={[
               { value: 'gemini', label: 'Gemini (default)' },
               { value: 'groq', label: 'Groq (fastest)' },
-              { value: 'anthropic', label: 'Anthropic · coming soon', disabled: true }
+              { value: 'anthropic', label: 'Claude (paid key)' }
             ]}
           />
         </Row>

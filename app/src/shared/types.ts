@@ -1,7 +1,7 @@
 import { DEFAULT_HOTKEYS, mergeHotkeys, type HotkeyMap } from './hotkeys'
 import type { Point } from './overlayPosition'
 
-/** Which model writes answers. Anthropic is listed for later but not wired; it behaves like Gemini. */
+/** Which model writes answers. Anthropic (Claude) is optional and needs a paid key. */
 export type LlmProvider = 'gemini' | 'groq' | 'anthropic'
 
 export type ResponseLength = 'short' | 'medium' | 'long'

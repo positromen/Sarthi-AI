@@ -1,5 +1,6 @@
 // Checks an API key before it is saved, with one cheap authenticated GET, so a mistyped key is caught in Setup
 // instead of mid-interview. Keys travel in headers only. A provider that can't be reached doesn't block saving.
+import Anthropic, { APIConnectionError, APIError } from '@anthropic-ai/sdk'
 import type { ApiKeyName, KeyCheck } from '../shared/types'
 
 interface Check {
@@ -35,7 +36,25 @@ const CHECKS: Partial<Record<ApiKeyName, Check>> = {
 
 const TIMEOUT_MS = 8000
 
+const REJECTED = [401, 403]
+
+// Claude is called through its SDK (see anthropic.ts), so its key is checked the same way: list one model.
+async function validateAnthropicKey(key: string, fetchImpl: typeof fetch): Promise<KeyCheck> {
+  const client = new Anthropic({ apiKey: key.trim(), fetch: fetchImpl, maxRetries: 0, timeout: TIMEOUT_MS })
+  try {
+    await client.models.list({ limit: 1 })
+    return { ok: true }
+  } catch (error) {
+    if (error instanceof APIError && !(error instanceof APIConnectionError) && error.status) {
+      if (REJECTED.includes(error.status)) return { ok: false, message: `Anthropic rejected this key (${error.status}).` }
+      return { ok: true, warning: `Saved, but Anthropic answered ${error.status}; the key couldn't be confirmed yet.` }
+    }
+    return { ok: true, warning: "Saved. Couldn't check it with Anthropic (no connection?)." }
+  }
+}
+
 export async function validateKey(name: ApiKeyName, key: string, fetchImpl: typeof fetch = fetch): Promise<KeyCheck> {
+  if (name === 'anthropic') return validateAnthropicKey(key, fetchImpl)
   const check = CHECKS[name]
   if (!check) return { ok: true }
   try {

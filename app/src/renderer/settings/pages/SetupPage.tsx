@@ -11,14 +11,13 @@ interface KeyInfo {
   use: string
   console: string
   required: boolean
-  soon?: boolean
 }
 
 export const KEYS: KeyInfo[] = [
   { name: 'deepgram', label: 'Deepgram', use: 'Live transcription', console: 'console.deepgram.com', required: true },
   { name: 'gemini', label: 'Gemini', use: 'Answers, free tier', console: 'aistudio.google.com', required: true },
   { name: 'groq', label: 'Groq', use: 'Fast answers, free tier', console: 'console.groq.com', required: true },
-  { name: 'anthropic', label: 'Anthropic', use: 'Claude answers', console: 'console.anthropic.com', required: false, soon: true }
+  { name: 'anthropic', label: 'Anthropic', use: 'Claude answers, paid', console: 'console.anthropic.com', required: false }
 ]
 
 export function useKeyStatusLive(): [ApiKeyStatus | null, (status: ApiKeyStatus) => void] {
@@ -63,9 +62,7 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
         <span className="text-[13.5px] font-semibold">{info.label}</span>
         <Badge tone={info.required ? 'required' : 'optional'}>{info.required ? 'Required' : 'Optional'}</Badge>
         <span className="flex-1" />
-        {info.soon ? (
-          <Badge tone="soon">Coming soon</Badge>
-        ) : saved ? (
+        {saved ? (
           <span className="inline-flex items-center gap-1 text-xs text-leaf">
             <Icon name="check" size={13} strokeWidth={2.25} />
             Saved (encrypted)
@@ -75,7 +72,7 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
         )}
       </div>
       <div className="text-[12.5px] text-fg-muted">
-        {info.use} · {info.soon ? info.console : <ExternalLink href={`https://${info.console}`}>{info.console}</ExternalLink>}
+        {info.use} · <ExternalLink href={`https://${info.console}`}>{info.console}</ExternalLink>
       </div>
       <form
         className="flex items-start gap-2"
@@ -89,9 +86,8 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
           autoComplete="off"
           spellCheck={false}
           aria-label={`${info.label} API key`}
-          placeholder={info.soon ? 'Coming soon' : saved ? 'Paste a new key to replace' : 'Paste key'}
+          placeholder={saved ? 'Paste a new key to replace' : 'Paste key'}
           value={value}
-          disabled={info.soon}
           error={error}
           onChange={(e) => {
             setValue(e.target.value)
@@ -99,10 +95,10 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
           }}
           className="flex-1"
         />
-        <Button type="submit" variant="primary" size={34} disabled={!value.trim() || info.soon} busy={busy}>
+        <Button type="submit" variant="primary" size={34} disabled={!value.trim()} busy={busy}>
           {busy ? 'Checking' : 'Save'}
         </Button>
-        {saved && !info.soon && (
+        {saved && (
           <Button variant="danger" size={34} onClick={() => void remove()}>
             Remove
           </Button>

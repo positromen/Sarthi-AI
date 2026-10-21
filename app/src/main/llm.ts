@@ -1,25 +1,28 @@
-// Routes an answer request to the provider the user chose, falling back to the other one on failure.
+// Routes an answer request to the provider the user chose, falling back to the others on failure.
 // Pure routing: keys and provider clients are passed in, so this stays testable without Electron.
 import type { ApiKeyName, LlmProvider } from '../shared/types'
+import { streamAnthropic } from './anthropic'
 import { streamGemini } from './gemini'
 import { streamGroq } from './groq'
 import type { LlmRequest } from './llm-types'
 
-type Provider = 'gemini' | 'groq'
-export type ProviderStreams = Record<Provider, (req: LlmRequest) => AsyncGenerator<string>>
+export type ProviderStreams = Record<LlmProvider, (req: LlmRequest) => AsyncGenerator<string>>
 
-const PROVIDERS: ProviderStreams = { gemini: streamGemini, groq: streamGroq }
+const PROVIDERS: ProviderStreams = { gemini: streamGemini, groq: streamGroq, anthropic: (req) => streamAnthropic(req) }
 
-function providerOrder(preferred: LlmProvider, hasImages: boolean): Provider[] {
-  // Gemini reads all five screenshots; Groq's only open vision model takes three and is a preview.
-  if (hasImages) return ['gemini', 'groq']
-  return preferred === 'groq' ? ['groq', 'gemini'] : ['gemini', 'groq']
+// Claude is optional and paid, so it comes last unless the user picked it.
+const FALLBACK_ORDER: LlmProvider[] = ['gemini', 'groq', 'anthropic']
+
+function providerOrder(preferred: LlmProvider, hasImages: boolean): LlmProvider[] {
+  // Gemini reads all five screenshots and Claude reads them well; Groq's only open vision model takes three.
+  if (hasImages) return ['gemini', 'anthropic', 'groq']
+  return [preferred, ...FALLBACK_ORDER.filter((provider) => provider !== preferred)]
 }
 
 /**
- * Streams an answer from the chosen provider (Anthropic is not wired yet, so it behaves like Gemini). If that
- * provider fails before sending any text, the other one is tried; once text has streamed, a failure is final,
- * since splicing two models' answers together would read as nonsense.
+ * Streams an answer from the chosen provider. If it fails before sending any text, the next provider with a key is
+ * tried; once text has streamed, a failure is final, since splicing two models' answers together would read as
+ * nonsense.
  */
 export async function* streamAnswer(
   req: Omit<LlmRequest, 'apiKey'> & { provider: LlmProvider },

@@ -28,6 +28,7 @@
     "vitest": "^5.0.5"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.132.1",
     "katex": "0.18.11",
     "mammoth": "^1.13.0",
     "pdf-parse": "^2.4.5",

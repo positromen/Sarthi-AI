@@ -243,7 +243,7 @@ export function Onboarding({ settings, update }: { settings: Settings; update: (
                 Deepgram transcribes the call. Gemini and Groq write the answers. All three have a free tier.
               </StepHeading>
               <div className="rounded-panel border border-line bg-panel">
-                {KEYS.filter((info) => !info.soon).map((info) => (
+                {KEYS.filter((info) => info.required).map((info) => (
                   <KeyRow key={info.name} info={info} saved={Boolean(keyStatus?.[info.name])} onSaved={setKeyStatus} />
                 ))}
               </div>
