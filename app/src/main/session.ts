@@ -64,8 +64,11 @@ export function pushAudioFrame(frame: ArrayBuffer): void {
   stream?.send(frame)
 }
 
-/** Manually answer the most recent interviewer question (the Ctrl+Shift+Enter hotkey). */
-export function requestManualAnswer(): void {
-  const lastQuestion = [...turns].reverse().find((turn) => turn.speaker === 'interviewer')
-  void generateAnswer(lastQuestion?.text ?? '', turns)
+/**
+ * Manually answer a typed question, or else the most recent interviewer question (the Ctrl+Shift+Enter hotkey).
+ * Typing is the fallback when transcription misses or mangles a question.
+ */
+export function requestManualAnswer(typed?: string): void {
+  const question = typed?.trim() || [...turns].reverse().find((turn) => turn.speaker === 'interviewer')?.text
+  void generateAnswer(question ?? '', turns)
 }

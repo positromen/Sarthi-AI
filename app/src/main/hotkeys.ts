@@ -5,6 +5,7 @@ import { captureScreenshot } from './screenshot'
 import { getSettings, updateSettings } from './store'
 import {
   broadcast,
+  focusOverlay,
   getOverlay,
   moveOverlay,
   openSettingsWindow,
@@ -24,6 +25,10 @@ export function registerHotkeys(): void {
     'CommandOrControl+Shift+Down': () => sendHotkey('scroll-down'),
     'CommandOrControl+Shift+C': () => {
       captureScreenshot().catch((error) => console.warn('Screenshot failed:', error))
+    },
+    'CommandOrControl+Shift+Space': () => {
+      focusOverlay()
+      sendHotkey('focus-ask')
     },
     'CommandOrControl+Shift+H': toggleOverlayVisible,
     'CommandOrControl+Shift+S': openSettingsWindow,

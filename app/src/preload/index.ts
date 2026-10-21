@@ -39,7 +39,8 @@ const api = {
   onTranscriptInterim: (callback: (interim: InterimTranscript) => void) =>
     subscribe(IPC.transcriptInterim, callback),
   onTranscriptTurn: (callback: (turn: TranscriptTurn) => void) => subscribe(IPC.transcriptTurn, callback),
-  generateAnswer: (): Promise<void> => ipcRenderer.invoke(IPC.generateAnswer),
+  /** Answers `question` if given (typed by the user), else the last interviewer question. */
+  generateAnswer: (question?: string): Promise<void> => ipcRenderer.invoke(IPC.generateAnswer, question),
   getAnswerState: (): Promise<AnswerState> => ipcRenderer.invoke(IPC.getAnswerState),
   onAnswerState: (callback: (state: AnswerState) => void) => subscribe(IPC.answerState, callback),
   importDocument: (): Promise<{ name: string; text: string } | null> => ipcRenderer.invoke(IPC.importDocument),

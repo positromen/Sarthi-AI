@@ -83,6 +83,14 @@ export function toggleOverlayVisible(): void {
   else win.showInactive()
 }
 
+/** Gives the overlay keyboard focus so a question can be typed (this does take focus from the meeting app). */
+export function focusOverlay(): void {
+  const win = getOverlay()
+  if (!win) return
+  if (!win.isVisible()) win.showInactive()
+  win.focus()
+}
+
 export function moveOverlay(dx: number, dy: number): void {
   const win = getOverlay()
   if (!win) return

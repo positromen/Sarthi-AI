@@ -11,7 +11,7 @@ export function useAnswer() {
     return window.sarthi.onAnswerState(setAnswer)
   }, [])
 
-  const generate = useCallback(() => window.sarthi.generateAnswer(), [])
+  const generate = useCallback((question?: string) => window.sarthi.generateAnswer(question), [])
 
   return { answer, generate }
 }

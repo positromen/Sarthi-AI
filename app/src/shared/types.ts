@@ -37,7 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
   notes: ''
 }
 
-export type Hotkey = 'answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening'
+export type Hotkey = 'answer' | 'scroll-up' | 'scroll-down' | 'toggle-listening' | 'focus-ask'
 
 export type ApiKeyName = 'deepgram' | 'gemini' | 'anthropic'
 export type ApiKeyStatus = Record<ApiKeyName, boolean>

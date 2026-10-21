@@ -68,7 +68,9 @@ function registerIpc(): void {
   ipcMain.handle(IPC.startSession, () => startSession())
   ipcMain.handle(IPC.stopSession, () => stopSession())
   ipcMain.handle(IPC.sessionState, () => getSessionState())
-  ipcMain.handle(IPC.generateAnswer, () => requestManualAnswer())
+  ipcMain.handle(IPC.generateAnswer, (_e, typed?: string) =>
+    requestManualAnswer(typeof typed === 'string' ? typed : undefined)
+  )
   ipcMain.handle(IPC.getAnswerState, () => getAnswerState())
   ipcMain.handle(IPC.importDocument, () => importDocument())
   ipcMain.handle(IPC.getScreenshots, () => listScreenshots())

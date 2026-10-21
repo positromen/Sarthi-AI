@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { Speaker } from '../../shared/types'
 import { useSettings } from '../useSettings'
 import { useAnswer } from './useAnswer'
@@ -37,6 +37,8 @@ export function Overlay() {
   const screenshots = useScreenshots()
   const answerRef = useRef<HTMLDivElement>(null)
   const transcriptRef = useRef<HTMLDivElement>(null)
+  const askRef = useRef<HTMLInputElement>(null)
+  const [typed, setTyped] = useState('')
   const toggleRef = useRef(listening.toggle)
   toggleRef.current = listening.toggle
   const generateRef = useRef(generate)
@@ -49,9 +51,18 @@ export function Overlay() {
         else if (key === 'scroll-down') answerRef.current?.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' })
         else if (key === 'toggle-listening') void toggleRef.current()
         else if (key === 'answer') void generateRef.current()
+        else if (key === 'focus-ask') askRef.current?.focus()
       }),
     []
   )
+
+  // Typing is the emergency path when transcription misses or garbles the interviewer's question.
+  const ask = (event: FormEvent) => {
+    event.preventDefault()
+    if (!typed.trim()) return
+    void generate(typed)
+    setTyped('')
+  }
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight })
@@ -182,8 +193,31 @@ export function Overlay() {
           )}
         </div>
 
+        <form onSubmit={ask} className="flex gap-1.5 border-t border-line px-3 py-1.5">
+          <input
+            ref={askRef}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setTyped('')
+                e.currentTarget.blur()
+              }
+            }}
+            placeholder="Type a question and press Enter (Ctrl+Shift+Space)"
+            className="min-w-0 flex-1 rounded bg-ink px-2 py-1 text-xs text-[#e7efe9] outline-none placeholder:text-white/30 focus:ring-1 focus:ring-leaf/50"
+          />
+          <button
+            type="submit"
+            disabled={!typed.trim()}
+            className="rounded bg-leaf/20 px-2 py-1 text-[11px] font-medium text-leaf hover:bg-leaf/30 disabled:opacity-40"
+          >
+            Ask
+          </button>
+        </form>
+
         <footer className="border-t border-line px-3 py-1.5 text-[10px] text-white/35">
-          Ctrl+Shift+L listen · Ctrl+Shift+Enter answer · Ctrl+Shift+C screenshot · Ctrl+Shift+H hide · Ctrl+Shift+P private · Ctrl+Alt+Arrows move
+          Ctrl+Shift+L listen · Ctrl+Shift+Enter answer · Ctrl+Shift+Space type · Ctrl+Shift+C screenshot · Ctrl+Shift+H hide · Ctrl+Shift+P private · Ctrl+Alt+Arrows move
         </footer>
       </div>
     </div>
