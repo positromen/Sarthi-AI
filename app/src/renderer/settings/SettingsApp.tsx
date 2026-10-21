@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ToastProvider } from '../ui/components'
 import { useSettings } from '../useSettings'
+import { Onboarding } from './Onboarding'
 import { AboutPage } from './pages/AboutPage'
 import { AnswersPage } from './pages/AnswersPage'
 import { HistoryPage } from './pages/HistoryPage'
@@ -27,10 +28,17 @@ export function SettingsApp() {
   if (!settings) return null
 
   const props = { settings, update }
+  if (!settings.onboarded) {
+    return (
+      <ToastProvider>
+        <Onboarding {...props} />
+      </ToastProvider>
+    )
+  }
   return (
     <ToastProvider>
       <Shell page={page} onNavigate={navigate} settings={settings} historyCount={historyCount}>
-        {page === 'setup' && <SetupPage />}
+        {page === 'setup' && <SetupPage onRunGuide={() => update({ onboarded: false })} />}
         {page === 'profile' && <ProfilePage {...props} />}
         {page === 'answers' && <AnswersPage {...props} />}
         {page === 'language' && <LanguagePage {...props} />}

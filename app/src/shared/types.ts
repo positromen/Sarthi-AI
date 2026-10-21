@@ -28,6 +28,8 @@ export interface Settings {
   overlayCompact: boolean
   /** Allow screenshots (hotkey, overlay button) and send them with answers. */
   screenshotsEnabled: boolean
+  /** First-run onboarding finished (or skipped because keys were already set up). */
+  onboarded: boolean
   /** Profile the answer engine draws on for tailored, specific answers. Plain text for now (PDF import later). */
   resume: string
   jobDescription: string
@@ -50,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
   overlayOpacity: 0.92,
   overlayCompact: false,
   screenshotsEnabled: true,
+  onboarded: false,
   resume: '',
   jobDescription: '',
   notes: ''

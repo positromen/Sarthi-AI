@@ -112,11 +112,19 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
   )
 }
 
-export function SetupPage() {
+export function SetupPage({ onRunGuide }: { onRunGuide: () => void }) {
   const [status, setStatus] = useKeyStatusLive()
   return (
     <>
-      <PageHeader title="Setup" subtitle="Sarthi uses your own API keys. Deepgram, Gemini and Groq are required; all three have a free tier." />
+      <PageHeader
+        title="Setup"
+        subtitle="Sarthi uses your own API keys. Deepgram, Gemini and Groq are required; all three have a free tier."
+        action={
+          <Button size={32} onClick={onRunGuide} className="[--ring-gap:var(--color-ink)]">
+            Run setup guide
+          </Button>
+        }
+      />
       <Card>
         {KEYS.map((info) => (
           <KeyRow key={info.name} info={info} saved={Boolean(status?.[info.name])} onSaved={setStatus} />

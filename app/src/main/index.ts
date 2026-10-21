@@ -1,7 +1,7 @@
 import { app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, session } from 'electron'
 import { basename, join } from 'node:path'
 import { IPC } from '../shared/ipc'
-import { API_KEY_NAMES, type ApiKeyName, type Settings } from '../shared/types'
+import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type Settings } from '../shared/types'
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { getHistory, initHistory } from './history'
@@ -108,6 +108,9 @@ app.on('second-instance', () => openSettingsWindow())
 
 app.whenReady().then(() => {
   migrateLegacySettings()
+  // Installs that were set up before onboarding existed already have their keys: don't walk them through it again.
+  const keys = getKeyStatus()
+  if (!getSettings().onboarded && REQUIRED_KEYS.every((name) => keys[name])) updateSettings({ onboarded: true })
   const history = initHistory(join(app.getPath('userData'), 'history'), {
     onChange: () => broadcast(IPC.historyChanged, history.list())
   })
