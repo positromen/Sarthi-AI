@@ -1,0 +1,20 @@
+export const IPC = {
+  getSettings: 'settings:get',
+  updateSettings: 'settings:update',
+  settingsChanged: 'settings:changed',
+  getKeyStatus: 'keys:status',
+  setKey: 'keys:set',
+  setOverlayInteractive: 'overlay:set-interactive',
+  openSettings: 'window:open-settings',
+  hotkey: 'hotkey:pressed',
+  startSession: 'session:start',
+  stopSession: 'session:stop',
+  sessionState: 'session:state',
+  audioFrame: 'session:audio-frame',
+  transcriptInterim: 'transcript:interim',
+  transcriptTurn: 'transcript:turn',
+  generateAnswer: 'answer:generate',
+  getAnswerState: 'answer:get',
+  answerState: 'answer:state',
+  importDocument: 'document:import'
+} as const

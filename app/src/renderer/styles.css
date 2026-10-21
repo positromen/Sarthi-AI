@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-leaf: #4ade80;
+  --color-ink: #0b0f0c;
+  --color-panel: #121814;
+  --color-line: #233027;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+.overlay-body {
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.settings-body {
+  background: var(--color-ink);
+  color: #e7efe9;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
