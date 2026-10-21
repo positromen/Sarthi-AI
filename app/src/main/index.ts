@@ -1,4 +1,6 @@
-import { app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, session } from 'electron'
+import { app, BrowserWindow, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, session, shell } from 'electron'
+import { mkdirSync } from 'node:fs'
+import { release, type } from 'node:os'
 import { basename, join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type Settings } from '../shared/types'
@@ -7,7 +9,8 @@ import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { exportSession } from './exportSession'
 import { getHistory, initHistory } from './history'
 import { registerHotkeys, resetHotkeys, setHotkey, suspendHotkeys, unavailableHotkeys } from './hotkeys'
-import { getKeyStatus, setKey } from './keys'
+import { getKey, getKeyStatus, setKey } from './keys'
+import { debugReport, getLog, initLog } from './log'
 import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
@@ -66,6 +69,26 @@ async function importDocument(): Promise<{ name: string; text: string } | null> 
   return { name: basename(filePath), text: await extractDocumentText(filePath) }
 }
 
+// Last 200 lines: enough to see what led up to a problem, small enough to paste into an issue.
+const DEBUG_LOG_LINES = 200
+const RENDERER_ERROR_CHARS = 2000
+
+function copyDebugInfo(): void {
+  const settings = getSettings()
+  clipboard.writeText(
+    debugReport({
+      app: app.getVersion(),
+      electron: process.versions.electron,
+      chrome: process.versions.chrome,
+      os: `${type()} ${release()}`,
+      provider: settings.llmProvider,
+      privateMode: settings.privateMode,
+      keys: getKeyStatus(),
+      log: getLog()?.tail(DEBUG_LOG_LINES) ?? ''
+    })
+  )
+}
+
 function registerIpc(): void {
   ipcMain.handle(IPC.getSettings, () => getSettings())
   ipcMain.handle(IPC.updateSettings, (_e, patch: Partial<Settings>) => {
@@ -120,11 +143,25 @@ function registerIpc(): void {
   ipcMain.on(IPC.openSettings, (_e, page?: unknown) => openSettingsWindow(typeof page === 'string' ? page : undefined))
   ipcMain.on(IPC.showOverlay, () => showOverlay())
   ipcMain.on(IPC.quitApp, () => app.quit())
+  ipcMain.on(IPC.logError, (_e, message: unknown) => {
+    if (typeof message === 'string') getLog()?.write('error', `[window] ${message.slice(0, RENDERER_ERROR_CHARS)}`)
+  })
+  ipcMain.handle(IPC.copyDebugInfo, () => copyDebugInfo())
+  ipcMain.handle(IPC.openLogsFolder, async () => {
+    // The folder appears with the first warning; create it so a fresh install opens an empty folder, not an error.
+    mkdirSync(logsDir(), { recursive: true })
+    await shell.openPath(logsDir())
+  })
 }
+
+const logsDir = () => join(app.getPath('userData'), 'logs')
 
 app.on('second-instance', () => openSettingsWindow())
 
 app.whenReady().then(() => {
+  initLog(join(logsDir(), 'sarthi.log'), {
+    secrets: () => API_KEY_NAMES.map((name) => getKey(name)).filter((key): key is string => Boolean(key))
+  })
   migrateLegacySettings()
   // Installs that were set up before onboarding existed already have their keys: don't walk them through it again.
   const keys = getKeyStatus()

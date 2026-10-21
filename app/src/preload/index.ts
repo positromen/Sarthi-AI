@@ -83,6 +83,10 @@ const api = {
   getUsage: (): Promise<UsageReport | null> => ipcRenderer.invoke(IPC.getUsage),
   /** Resolves to the saved file's path, or null if the Save dialog was cancelled. */
   exportSession: (id: string): Promise<string | null> => ipcRenderer.invoke(IPC.exportSession, id),
+  /** Uncaught renderer errors, for the local log (main redacts keys before writing). */
+  logError: (message: string): void => ipcRenderer.send(IPC.logError, message),
+  copyDebugInfo: (): Promise<void> => ipcRenderer.invoke(IPC.copyDebugInfo),
+  openLogsFolder: (): Promise<void> => ipcRenderer.invoke(IPC.openLogsFolder),
   onHistoryChanged: (callback: (sessions: SessionSummary[]) => void) => subscribe(IPC.historyChanged, callback)
 }
 

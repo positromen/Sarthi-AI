@@ -1,6 +1,6 @@
 // About (design B12): version, the local-first promise, and links to the key consoles.
 import { useEffect, useState } from 'react'
-import { Button } from '../../ui/components'
+import { Button, useToast } from '../../ui/components'
 import { Logo } from '../../ui/icons'
 import { Card, ExternalLink } from '../layout'
 
@@ -13,6 +13,7 @@ const CONSOLES = [
 
 export function AboutPage() {
   const [info, setInfo] = useState<{ version: string; platform: string } | null>(null)
+  const toast = useToast()
   useEffect(() => {
     window.sarthi.getAppInfo().then(setInfo)
   }, [])
@@ -39,6 +40,23 @@ export function AboutPage() {
             <ExternalLink href={`https://${host}`}>{host}</ExternalLink>
           </div>
         ))}
+      </Card>
+      <Card className="mt-4 flex items-center justify-between gap-4 px-4 py-3">
+        <span className="text-[12.5px] text-fg-muted">
+          Something not working? Debug info has versions, settings and recent errors, with API keys removed. Paste it
+          into a bug report.
+        </span>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => void window.sarthi.copyDebugInfo().then(() => toast('Debug info copied (no keys in it)'))}
+          >
+            Copy debug info
+          </Button>
+          <Button variant="secondary" onClick={() => void window.sarthi.openLogsFolder()}>
+            Open logs
+          </Button>
+        </div>
       </Card>
       <Card className="mt-4 flex items-center justify-between gap-4 px-4 py-3">
         <span className="text-[12.5px] text-fg-muted">
