@@ -20,5 +20,10 @@ export const IPC = {
   getScreenshots: 'screenshot:list',
   captureScreenshot: 'screenshot:capture',
   removeScreenshot: 'screenshot:remove',
-  screenshotsChanged: 'screenshot:changed'
+  screenshotsChanged: 'screenshot:changed',
+  listHistory: 'history:list',
+  getHistorySession: 'history:get',
+  deleteHistorySession: 'history:delete',
+  generateNotes: 'history:notes',
+  historyChanged: 'history:changed'
 } as const

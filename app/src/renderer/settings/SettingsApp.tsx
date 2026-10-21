@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { LISTENING_LANGUAGES, OUTPUT_LANGUAGES } from '../../shared/languages'
 import { useSettings } from '../useSettings'
 import { ApiKeys } from './ApiKeys'
+import { History } from './History'
 
 function Toggle({ label, hint, checked, onChange }: {
   label: string
@@ -229,6 +230,8 @@ export function SettingsApp() {
           onSave={(notes) => update({ notes })}
         />
       </section>
+
+      <History />
     </main>
   )
 }

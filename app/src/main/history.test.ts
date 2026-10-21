@@ -1,0 +1,114 @@
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Speaker, TranscriptTurn } from '../shared/types'
+import { HistoryStore } from './history'
+
+let dir: string
+let nextId = 1
+
+const turn = (speaker: Speaker, text: string): TranscriptTurn => ({ id: nextId++, speaker, text, at: nextId })
+
+beforeEach(() => {
+  dir = mkdtempSync(join(tmpdir(), 'sarthi-history-'))
+})
+
+afterEach(() => {
+  vi.useRealTimers()
+  rmSync(dir, { recursive: true, force: true })
+})
+
+describe('HistoryStore', () => {
+  it('saves a finished session and lists it with a title from the first interviewer turn', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    store.addTurn(turn('you', 'Hello.'))
+    store.addTurn(turn('interviewer', 'Tell me about yourself.'))
+    store.addAnswer('Tell me about yourself.', '- I build OT security tools.', 1500)
+    const summary = store.finish(2000)
+
+    expect(summary).toMatchObject({
+      id: '1000',
+      startedAt: 1000,
+      endedAt: 2000,
+      turnCount: 2,
+      answerCount: 1,
+      title: 'Tell me about yourself.',
+      hasNotes: false
+    })
+    expect(new HistoryStore(dir).get('1000')).toMatchObject({
+      turns: [{ text: 'Hello.' }, { text: 'Tell me about yourself.' }],
+      answers: [{ question: 'Tell me about yourself.', text: '- I build OT security tools.', at: 1500 }],
+      notes: null
+    })
+  })
+
+  it('does not save a session where nothing was said or answered', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    expect(store.finish(2000)).toBeNull()
+    expect(store.list()).toEqual([])
+  })
+
+  it('ignores answers given outside a session', () => {
+    const store = new HistoryStore(dir)
+    store.addAnswer('Why us?', 'Because.')
+    expect(store.list()).toEqual([])
+  })
+
+  it('autosaves an in-progress session so a crash loses at most a few seconds', () => {
+    vi.useFakeTimers()
+    const store = new HistoryStore(dir, { saveDelayMs: 2000 })
+    store.begin(1000)
+    store.addTurn(turn('interviewer', 'Walk me through your project.'))
+    expect(readdirSync(dir)).toEqual([])
+    vi.advanceTimersByTime(2000)
+    expect(new HistoryStore(dir).get('1000')).toMatchObject({ endedAt: null, turns: [{ text: 'Walk me through your project.' }] })
+  })
+
+  it('lists newest first and prunes beyond the cap', () => {
+    const store = new HistoryStore(dir, { maxSessions: 2 })
+    for (const start of [1000, 2000, 3000]) {
+      store.begin(start)
+      store.addTurn(turn('interviewer', `Question at ${start}?`))
+      store.finish(start + 500)
+    }
+    expect(store.list().map((s) => s.id)).toEqual(['3000', '2000'])
+  })
+
+  it('stores notes and deletes sessions', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    store.addTurn(turn('interviewer', 'Any questions for us?'))
+    store.finish(2000)
+
+    expect(store.setNotes('1000', 'Went well.')?.notes).toBe('Went well.')
+    expect(store.list()[0].hasNotes).toBe(true)
+    expect(store.remove('1000')).toBe(true)
+    expect(store.list()).toEqual([])
+  })
+
+  it('rejects ids that are not plain session ids, so the renderer cannot reach other files', () => {
+    const store = new HistoryStore(dir)
+    expect(store.get('../settings')).toBeNull()
+    expect(store.remove('..\\..\\x')).toBe(false)
+    expect(store.setNotes('1000/../../x', 'n')).toBeNull()
+  })
+
+  it('skips corrupt files when listing', () => {
+    writeFileSync(join(dir, '5000.json'), '{not json')
+    expect(new HistoryStore(dir).list()).toEqual([])
+  })
+
+  it('notifies on every saved change', () => {
+    const onChange = vi.fn()
+    const store = new HistoryStore(dir, { onChange })
+    store.begin(1000)
+    store.addTurn(turn('interviewer', 'Strengths?'))
+    store.finish(2000)
+    store.setNotes('1000', 'ok')
+    store.remove('1000')
+    expect(onChange).toHaveBeenCalledTimes(3)
+  })
+})

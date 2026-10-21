@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_SETTINGS, type TranscriptTurn } from '../shared/types'
-import { buildSystemPrompt, buildUserPrompt } from './prompt'
+import { buildNotesPrompt, buildSystemPrompt, buildUserPrompt } from './prompt'
 
 describe('buildSystemPrompt', () => {
   it('reflects bullet format and the STAR method', () => {
@@ -67,5 +67,39 @@ describe('buildUserPrompt', () => {
     const prompt = buildUserPrompt('भारत का शेक्सपियर किसे कहा जाता है?', [], { outputLanguage: 'en' })
     expect(prompt.split('\n').at(-1)).toMatch(/answer in English/)
     expect(buildUserPrompt('Why this role?', [], { outputLanguage: 'hi' })).toMatch(/answer in Hindi/)
+  })
+})
+
+describe('buildNotesPrompt', () => {
+  const turns: TranscriptTurn[] = [
+    { id: 1, speaker: 'interviewer', text: 'Why should we hire you?', at: 0 },
+    { id: 2, speaker: 'you', text: 'Because I ship secure systems.', at: 1 }
+  ]
+
+  it('gives the coach the labelled transcript and asks for structured feedback', () => {
+    const { system, user } = buildNotesPrompt(turns, { ...DEFAULT_SETTINGS, jobDescription: 'Security engineer role' })
+    expect(system).toMatch(/coach/i)
+    expect(system).toMatch(/to improve/i)
+    expect(system).toMatch(/prepare/i)
+    expect(system).toContain('Security engineer role')
+    expect(user).toContain('Interviewer: Why should we hire you?')
+    expect(user).toContain('Me: Because I ship secure systems.')
+  })
+
+  it('writes the notes in the chosen answer language', () => {
+    expect(buildNotesPrompt(turns, { ...DEFAULT_SETTINGS, outputLanguage: 'hi' }).user).toMatch(/in Hindi/)
+  })
+
+  it('keeps the end of a very long transcript', () => {
+    const long: TranscriptTurn[] = Array.from({ length: 4000 }, (_, i) => ({
+      id: i,
+      speaker: 'interviewer',
+      text: `Question number ${i} with some padding words to make it long`,
+      at: i
+    }))
+    const { user } = buildNotesPrompt(long, DEFAULT_SETTINGS)
+    expect(user).toContain('Question number 3999')
+    expect(user).not.toContain('Question number 0 ')
+    expect(user.length).toBeLessThan(70_000)
   })
 })

@@ -34,6 +34,8 @@ export interface GeminiRequest {
   user: string
   /** Screenshots sent with the question (e.g. a coding problem on screen). */
   images?: readonly GeminiImage[]
+  /** Overrides the default answer budget (e.g. for longer post-call notes). */
+  maxOutputTokens?: number
   signal?: AbortSignal
 }
 
@@ -72,7 +74,7 @@ function requestBody(req: GeminiRequest, model: ModelChoice): string {
     contents: [{ role: 'user', parts }],
     generationConfig: {
       // A screenshot is usually a coding problem, whose answer (code + explanation) needs more room.
-      maxOutputTokens: images.length > 0 ? 2048 : 1024,
+      maxOutputTokens: req.maxOutputTokens ?? (images.length > 0 ? 2048 : 1024),
       temperature: 0.7,
       thinkingConfig: { thinkingLevel: model.thinkingLevel }
     }

@@ -16,13 +16,21 @@ const TONE: Record<Settings['responseTone'], string> = {
   confident: 'Sound confident and assertive, without arrogance.'
 }
 
+// Post-call notes read the end of a long call: a ~60k-character cap keeps an hour-long transcript in one request.
+const NOTES_TRANSCRIPT_CHARS = 60_000
+
+const languageName = (code: string): string =>
+  OUTPUT_LANGUAGES.find((language) => language.value === code)?.label ?? 'English'
+
 function languageInstruction(code: string): string {
   if (code === 'hinglish') {
     return 'Write the answer in Hinglish: natural spoken Hindi mixed with English, in Roman (Latin) script, not Devanagari.'
   }
-  const name = OUTPUT_LANGUAGES.find((language) => language.value === code)?.label ?? 'English'
-  return `Write the answer in ${name}, whatever language the interviewer used.`
+  return `Write the answer in ${languageName(code)}, whatever language the interviewer used.`
 }
+
+const transcriptLine = (turn: TranscriptTurn): string =>
+  `${turn.speaker === 'you' ? 'Me' : 'Interviewer'}: ${turn.text}`
 
 export function buildSystemPrompt(settings: Settings): string {
   const lines = [
@@ -74,10 +82,7 @@ export function buildUserPrompt(
   turns: readonly TranscriptTurn[],
   { screenshots: screenshotCount = 0, outputLanguage = 'en' }: UserPromptOptions = {}
 ): string {
-  const recent = turns
-    .slice(-CONTEXT_TURNS)
-    .map((turn) => `${turn.speaker === 'you' ? 'Me' : 'Interviewer'}: ${turn.text}`)
-    .join('\n')
+  const recent = turns.slice(-CONTEXT_TURNS).map(transcriptLine).join('\n')
   const screenshots =
     screenshotCount > 0 &&
     `I've attached ${screenshotCount} ${screenshotCount === 1 ? 'screenshot' : 'screenshots'} of my screen, oldest first. ` +
@@ -92,4 +97,45 @@ export function buildUserPrompt(
   ]
     .filter(Boolean)
     .join('\n\n')
+}
+
+/** The most recent turns that fit the cap, oldest first. */
+function tailTranscript(turns: readonly TranscriptTurn[]): string {
+  const lines: string[] = []
+  let size = 0
+  for (let i = turns.length - 1; i >= 0; i--) {
+    const line = transcriptLine(turns[i])
+    if (size + line.length + 1 > NOTES_TRANSCRIPT_CHARS) break
+    lines.push(line)
+    size += line.length + 1
+  }
+  return lines.reverse().join('\n')
+}
+
+/** Prompts for post-call coaching notes on a finished session. */
+export function buildNotesPrompt(
+  turns: readonly TranscriptTurn[],
+  settings: Settings
+): { system: string; user: string } {
+  const lines = [
+    'You are an interview coach reviewing the transcript of a job interview the user just finished. "Me" is the user (the candidate); "Interviewer" is the other side.',
+    'The transcript comes from live speech recognition and may be garbled; judge what was meant.',
+    'Write short, specific, honest notes in exactly these sections, each a heading line followed by "- " bullets:',
+    'Overall — two or three bullets on how it went.',
+    'Went well — the strongest answers or moments, quoting briefly.',
+    'To improve — weak, vague or missed answers, each with what a better answer would include.',
+    'Prepare next — topics and likely follow-up questions to prepare for the next round.',
+    'Address the user as "you". No preamble.'
+  ]
+  const jd = settings.jobDescription.trim()
+  if (jd) lines.push(`The role they interviewed for:\n${jd}`)
+
+  const language =
+    settings.outputLanguage === 'hinglish'
+      ? 'Write the notes in Hinglish (Hindi mixed with English, in Roman script).'
+      : `Write the notes in ${languageName(settings.outputLanguage)}.`
+  return {
+    system: lines.join('\n'),
+    user: `Interview transcript:\n${tailTranscript(turns)}\n\n${language}`
+  }
 }

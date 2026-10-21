@@ -84,7 +84,37 @@ export interface ScreenshotInfo {
   at: number
 }
 
-export type AnswerStatus ='idle' | 'thinking' | 'streaming' | 'done' | 'error'
+export interface HistoryAnswer {
+  question: string
+  text: string
+  at: number
+}
+
+/** One listening session as saved on disk, under userData/history. */
+export interface SessionRecord {
+  /** The start time in ms, as a string; also the file name. */
+  id: string
+  startedAt: number
+  /** Null while the session is still running (or if the app quit mid-session). */
+  endedAt: number | null
+  turns: TranscriptTurn[]
+  answers: HistoryAnswer[]
+  /** Post-call coaching notes, once generated. */
+  notes: string | null
+}
+
+export interface SessionSummary {
+  id: string
+  startedAt: number
+  endedAt: number | null
+  turnCount: number
+  answerCount: number
+  /** The first interviewer turn, shortened, so sessions are recognisable in a list. */
+  title: string
+  hasNotes: boolean
+}
+
+export type AnswerStatus = 'idle' | 'thinking' | 'streaming' | 'done' | 'error'
 
 export interface AnswerState {
   status: AnswerStatus

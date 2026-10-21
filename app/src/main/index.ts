@@ -1,11 +1,13 @@
 import { app, BrowserWindow, desktopCapturer, dialog, globalShortcut, ipcMain, session } from 'electron'
-import { basename } from 'node:path'
+import { basename, join } from 'node:path'
 import { IPC } from '../shared/ipc'
 import type { ApiKeyName, Settings } from '../shared/types'
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
+import { getHistory, initHistory } from './history'
 import { registerHotkeys } from './hotkeys'
 import { getKeyStatus, setKey } from './keys'
+import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, migrateLegacySettings, updateSettings } from './store'
@@ -76,6 +78,11 @@ function registerIpc(): void {
   ipcMain.handle(IPC.getScreenshots, () => listScreenshots())
   ipcMain.handle(IPC.captureScreenshot, () => captureScreenshot())
   ipcMain.handle(IPC.removeScreenshot, (_e, id: number) => removeScreenshot(id))
+  // Ids come from the renderer; the store validates them before touching the disk.
+  ipcMain.handle(IPC.listHistory, () => getHistory()?.list() ?? [])
+  ipcMain.handle(IPC.getHistorySession, (_e, id: string) => getHistory()?.get(String(id)) ?? null)
+  ipcMain.handle(IPC.deleteHistorySession, (_e, id: string) => getHistory()?.remove(String(id)) ?? false)
+  ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))
   ipcMain.on(IPC.openSettings, () => openSettingsWindow())
@@ -85,6 +92,9 @@ app.on('second-instance', () => openSettingsWindow())
 
 app.whenReady().then(() => {
   migrateLegacySettings()
+  const history = initHistory(join(app.getPath('userData'), 'history'), {
+    onChange: () => broadcast(IPC.historyChanged, history.list())
+  })
   registerIpc()
   registerLoopbackAudio()
   createOverlayWindow()
@@ -95,5 +105,7 @@ app.whenReady().then(() => {
 app.on('will-quit', () => {
   globalShortcut.unregisterAll()
   stopSession()
+  // The socket's close event may not fire before the process exits, so save the running session now.
+  getHistory()?.finish()
 })
 app.on('window-all-closed', () => app.quit())

@@ -7,7 +7,9 @@ import type {
   Hotkey,
   InterimTranscript,
   ScreenshotInfo,
+  SessionRecord,
   SessionState,
+  SessionSummary,
   Settings,
   TranscriptTurn
 } from '../shared/types'
@@ -48,7 +50,12 @@ const api = {
   captureScreenshot: (): Promise<ScreenshotInfo[]> => ipcRenderer.invoke(IPC.captureScreenshot),
   removeScreenshot: (id: number): Promise<ScreenshotInfo[]> => ipcRenderer.invoke(IPC.removeScreenshot, id),
   onScreenshotsChanged: (callback: (shots: ScreenshotInfo[]) => void) =>
-    subscribe(IPC.screenshotsChanged, callback)
+    subscribe(IPC.screenshotsChanged, callback),
+  listHistory: (): Promise<SessionSummary[]> => ipcRenderer.invoke(IPC.listHistory),
+  getHistorySession: (id: string): Promise<SessionRecord | null> => ipcRenderer.invoke(IPC.getHistorySession, id),
+  deleteHistorySession: (id: string): Promise<boolean> => ipcRenderer.invoke(IPC.deleteHistorySession, id),
+  generateNotes: (id: string): Promise<SessionRecord> => ipcRenderer.invoke(IPC.generateNotes, id),
+  onHistoryChanged: (callback: (sessions: SessionSummary[]) => void) => subscribe(IPC.historyChanged, callback)
 }
 
 export type SarthiApi = typeof api

@@ -1,6 +1,7 @@
 import { IPC } from '../shared/ipc'
 import type { AnswerState, TranscriptTurn } from '../shared/types'
 import { streamGemini } from './gemini'
+import { getHistory } from './history'
 import { getKey } from './keys'
 import { buildSystemPrompt, buildUserPrompt } from './prompt'
 import { getScreenshotImages } from './screenshot'
@@ -61,6 +62,7 @@ export async function generateAnswer(question: string, context: readonly Transcr
     }
     if (superseded()) return
     setState({ status: 'done', text, question: q })
+    getHistory()?.addAnswer(q, text)
   } catch (error) {
     if (ctrl.signal.aborted || superseded()) return
     setState({ status: 'error', text: '', question: q, error: (error as Error).message })

@@ -2,6 +2,7 @@ import { IPC } from '../shared/ipc'
 import type { SessionState, TranscriptTurn } from '../shared/types'
 import { generateAnswer } from './answer'
 import { DeepgramStream } from './deepgram'
+import { getHistory } from './history'
 import { getKey } from './keys'
 import { isQuestion } from './question'
 import { getSettings } from './store'
@@ -32,6 +33,7 @@ export function startSession(): SessionState {
   if (!apiKey) return setState({ status: 'error', error: 'Add your Deepgram key in Settings (Ctrl+Shift+S)' })
 
   turns = []
+  getHistory()?.begin()
   const current = new DeepgramStream()
   stream = current
   stream.on('open', () => setState({ status: 'listening' }))
@@ -39,6 +41,7 @@ export function startSession(): SessionState {
   stream.on('turn', (speaker, text) => {
     const turn: TranscriptTurn = { id: nextTurnId++, speaker, text, at: Date.now() }
     turns.push(turn)
+    getHistory()?.addTurn(turn)
     broadcast(IPC.transcriptTurn, turn)
     if (speaker === 'interviewer' && getSettings().autoAnswer && isQuestion(text)) {
       void generateAnswer(text, turns)
@@ -49,6 +52,7 @@ export function startSession(): SessionState {
     // A quick stop/start can leave an old stream closing after a new one started.
     if (stream !== current) return
     stream = null
+    getHistory()?.finish()
     if (state.status !== 'error') setState({ status: 'idle' })
   })
   stream.connect(apiKey, getSettings().listeningLanguage)
