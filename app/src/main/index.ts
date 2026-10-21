@@ -4,6 +4,7 @@ import { IPC } from '../shared/ipc'
 import { API_KEY_NAMES, REQUIRED_KEYS, type ApiKeyName, type Settings } from '../shared/types'
 import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
+import { exportSession } from './exportSession'
 import { getHistory, initHistory } from './history'
 import { registerHotkeys, resetHotkeys, setHotkey, suspendHotkeys, unavailableHotkeys } from './hotkeys'
 import { getKeyStatus, setKey } from './keys'
@@ -108,6 +109,9 @@ function registerIpc(): void {
   ipcMain.handle(IPC.getHistorySession, (_e, id: string) => getHistory()?.get(String(id)) ?? null)
   ipcMain.handle(IPC.deleteHistorySession, (_e, id: string) => getHistory()?.remove(String(id)) ?? false)
   ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
+  ipcMain.handle(IPC.exportSession, (e, id: string) =>
+    exportSession(String(id), BrowserWindow.fromWebContents(e.sender))
+  )
   ipcMain.handle(IPC.getUsage, () => getUsage()?.report() ?? null)
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))

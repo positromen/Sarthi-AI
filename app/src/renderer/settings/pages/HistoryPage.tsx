@@ -6,7 +6,7 @@ import type { SessionRecord, SessionSummary } from '../../../shared/types'
 import { sessionUsageLine } from '../../../shared/usageFormat'
 import { AnswerContent } from '../../overlay/AnswerContent'
 import { keysFor } from '../../shortcuts'
-import { Badge, Button, EmptyState, Keys, Segmented } from '../../ui/components'
+import { Badge, Button, EmptyState, Keys, Segmented, useToast } from '../../ui/components'
 import { Icon } from '../../ui/icons'
 import {
   filterSessions,
@@ -82,6 +82,25 @@ function SessionDetail({ id }: { id: string }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [listening, setListening] = useState(false)
+  const toast = useToast()
+
+  // The Save dialog is an ordinary Windows window that a screen share would show, so say so during a call.
+  useEffect(() => {
+    const track = (state: { status: string }) => setListening(state.status === 'listening' || state.status === 'connecting')
+    window.sarthi.getSessionState().then(track)
+    return window.sarthi.onSessionState(track)
+  }, [])
+
+  const exportRecord = async () => {
+    setError(null)
+    try {
+      const path = await window.sarthi.exportSession(id)
+      if (path) toast(`Exported to ${path}`)
+    } catch (e) {
+      setError(cleanError(e))
+    }
+  }
 
   useEffect(() => {
     setRecord(null)
@@ -144,6 +163,9 @@ function SessionDetail({ id }: { id: string }) {
           >
             {busy ? 'Writing notes… can take up to a minute' : record.notes ? 'Regenerate notes' : 'Post-call notes'}
           </Button>
+          <Button variant="secondary" icon="file" onClick={() => void exportRecord()}>
+            Export
+          </Button>
           <span className="flex-1" />
           <Button
             variant={confirmDelete ? 'confirm' : 'danger'}
@@ -154,6 +176,9 @@ function SessionDetail({ id }: { id: string }) {
             {confirmDelete ? 'Click again to delete' : 'Delete'}
           </Button>
         </div>
+        {listening && (
+          <span className="text-xs text-warn">The export Save dialog is visible in screen share. Export after the call.</span>
+        )}
         {error && <span className="text-xs text-danger">{error}</span>}
       </div>
 

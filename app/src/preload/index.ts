@@ -81,6 +81,8 @@ const api = {
   deleteHistorySession: (id: string): Promise<boolean> => ipcRenderer.invoke(IPC.deleteHistorySession, id),
   generateNotes: (id: string): Promise<SessionRecord> => ipcRenderer.invoke(IPC.generateNotes, id),
   getUsage: (): Promise<UsageReport | null> => ipcRenderer.invoke(IPC.getUsage),
+  /** Resolves to the saved file's path, or null if the Save dialog was cancelled. */
+  exportSession: (id: string): Promise<string | null> => ipcRenderer.invoke(IPC.exportSession, id),
   onHistoryChanged: (callback: (sessions: SessionSummary[]) => void) => subscribe(IPC.historyChanged, callback)
 }
 
