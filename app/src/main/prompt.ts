@@ -160,6 +160,7 @@ export function buildNotesPrompt(
     'Went well — the strongest answers or moments, quoting briefly.',
     'To improve — weak, vague or missed answers, each with what a better answer would include.',
     'Prepare next — topics and likely follow-up questions to prepare for the next round.',
+    'Write the four headings exactly as written, in English (Overall, Went well, To improve, Prepare next), each on its own line, even when the notes themselves are in another language.',
     'Address the user as "you". No preamble.'
   ]
   const jd = settings.jobDescription.trim()

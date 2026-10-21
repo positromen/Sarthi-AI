@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { sessionTitle } from '../shared/sessionTitle'
 import type { SessionRecord, SessionSummary, TranscriptTurn } from '../shared/types'
 
 // Session ids are start times in ms. Anything else coming from the renderer is refused before it touches the disk.
@@ -16,8 +17,7 @@ export interface HistoryOptions {
 }
 
 function summarize(record: SessionRecord): SessionSummary {
-  const first = record.turns.find((turn) => turn.speaker === 'interviewer') ?? record.turns[0]
-  const title = first?.text ?? record.answers[0]?.question ?? 'Untitled session'
+  const title = sessionTitle(record)
   return {
     id: record.id,
     startedAt: record.startedAt,
@@ -81,6 +81,22 @@ export class HistoryStore {
     return this.ids()
       .map((id) => this.get(id))
       .filter((record): record is SessionRecord => record !== null)
+      .map(summarize)
+      .sort((a, b) => b.startedAt - a.startedAt)
+  }
+
+  /** Sessions whose title, transcript or answers contain `query` (case-insensitive), newest first. */
+  search(query: string): SessionSummary[] {
+    const needle = query.trim().toLowerCase()
+    if (!needle) return this.list()
+    return this.ids()
+      .map((id) => this.get(id))
+      .filter((record): record is SessionRecord => record !== null)
+      .filter((record) =>
+        [...record.turns.map((t) => t.text), ...record.answers.flatMap((a) => [a.question, a.text])].some((text) =>
+          text.toLowerCase().includes(needle)
+        )
+      )
       .map(summarize)
       .sort((a, b) => b.startedAt - a.startedAt)
   }

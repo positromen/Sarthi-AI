@@ -112,3 +112,35 @@ describe('HistoryStore', () => {
     expect(onChange).toHaveBeenCalledTimes(3)
   })
 })
+
+describe('HistoryStore.search', () => {
+  it('finds sessions by title, transcript or answer text, case-insensitively, newest first', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    store.addTurn(turn('interviewer', 'Tell me about Kafka consumers.'))
+    store.finish(1500)
+    store.begin(2000)
+    store.addTurn(turn('interviewer', 'Why this role?'))
+    store.addAnswer('Why this role?', 'Because of the payments scale.', 2100)
+    store.finish(2500)
+    store.begin(3000)
+    store.addTurn(turn('you', 'I tuned KAFKA lag alerts.'))
+    store.finish(3500)
+
+    expect(store.search('kafka').map((s) => s.id)).toEqual(['3000', '1000'])
+    expect(store.search('payments').map((s) => s.id)).toEqual(['2000'])
+    expect(store.search('  ').map((s) => s.id)).toEqual(['3000', '2000', '1000'])
+    expect(store.search('nothing like this')).toEqual([])
+  })
+})
+
+describe('session titles', () => {
+  it('use the first answered question, not the greeting that usually opens a call', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    store.addTurn(turn('interviewer', 'Hi, thanks for joining. Can you hear me?'))
+    store.addTurn(turn('interviewer', 'What is the hardest scaling problem you have solved?'))
+    store.addAnswer('What is the hardest scaling problem you have solved?', '- Partitioned the batch.', 1200)
+    expect(store.finish(2000)?.title).toBe('What is the hardest scaling problem you have solved?')
+  })
+})

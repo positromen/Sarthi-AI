@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ToastProvider } from '../ui/components'
 import { useSettings } from '../useSettings'
-import { History } from './History'
 import { AboutPage } from './pages/AboutPage'
 import { AnswersPage } from './pages/AnswersPage'
+import { HistoryPage } from './pages/HistoryPage'
 import { HotkeysPage } from './pages/HotkeysPage'
 import { LanguagePage } from './pages/LanguagePage'
 import { PrivacyPage } from './pages/PrivacyPage'
@@ -36,7 +36,7 @@ export function SettingsApp() {
         {page === 'language' && <LanguagePage {...props} />}
         {page === 'privacy' && <PrivacyPage {...props} />}
         {page === 'hotkeys' && <HotkeysPage />}
-        {page === 'history' && <History />}
+        {page === 'history' && <HistoryPage />}
         {page === 'about' && <AboutPage />}
       </Shell>
     </ToastProvider>

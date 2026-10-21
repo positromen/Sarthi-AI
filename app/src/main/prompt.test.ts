@@ -138,3 +138,10 @@ describe('question modes', () => {
     expect(buildSystemPrompt(DEFAULT_SETTINGS, 'Tell me about yourself')).toMatch(/LaTeX/)
   })
 })
+
+describe('buildNotesPrompt headings', () => {
+  it('keeps the section headings in English so the report can be laid out, whatever the notes language', () => {
+    const { system } = buildNotesPrompt([], { ...DEFAULT_SETTINGS, outputLanguage: 'hi' })
+    expect(system).toMatch(/headings exactly as written, in English/i)
+  })
+})

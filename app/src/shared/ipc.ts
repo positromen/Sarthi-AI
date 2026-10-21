@@ -26,6 +26,7 @@ export const IPC = {
   deleteHistorySession: 'history:delete',
   generateNotes: 'history:notes',
   historyChanged: 'history:changed',
+  searchHistory: 'history:search',
   keysChanged: 'keys:changed',
   navigate: 'settings:navigate',
   showOverlay: 'window:show-overlay',

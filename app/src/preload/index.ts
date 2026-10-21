@@ -60,6 +60,8 @@ const api = {
   onScreenshotsChanged: (callback: (shots: ScreenshotInfo[]) => void) =>
     subscribe(IPC.screenshotsChanged, callback),
   listHistory: (): Promise<SessionSummary[]> => ipcRenderer.invoke(IPC.listHistory),
+  /** Sessions whose title, transcript or answers contain the query. */
+  searchHistory: (query: string): Promise<SessionSummary[]> => ipcRenderer.invoke(IPC.searchHistory, query),
   getHistorySession: (id: string): Promise<SessionRecord | null> => ipcRenderer.invoke(IPC.getHistorySession, id),
   deleteHistorySession: (id: string): Promise<boolean> => ipcRenderer.invoke(IPC.deleteHistorySession, id),
   generateNotes: (id: string): Promise<SessionRecord> => ipcRenderer.invoke(IPC.generateNotes, id),

@@ -122,7 +122,8 @@ export function Shell({
         </div>
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto">
-        <div className={`mx-auto px-9 pt-7 pb-12 ${page === 'history' ? 'max-w-none' : 'max-w-[680px]'}`}>{children}</div>
+        {/* History is a two-pane view, so it gets the full width and tighter padding. */}
+        <div className={page === 'history' ? 'px-6 pt-6 pb-6' : 'mx-auto max-w-[680px] px-9 pt-7 pb-12'}>{children}</div>
       </main>
     </div>
   )

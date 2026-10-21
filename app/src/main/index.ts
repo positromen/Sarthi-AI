@@ -92,6 +92,9 @@ function registerIpc(): void {
   ipcMain.handle(IPC.removeScreenshot, (_e, id: number) => removeScreenshot(id))
   // Ids come from the renderer; the store validates them before touching the disk.
   ipcMain.handle(IPC.listHistory, () => getHistory()?.list() ?? [])
+  ipcMain.handle(IPC.searchHistory, (_e, query: unknown) =>
+    typeof query === 'string' ? (getHistory()?.search(query.slice(0, 200)) ?? []) : []
+  )
   ipcMain.handle(IPC.getHistorySession, (_e, id: string) => getHistory()?.get(String(id)) ?? null)
   ipcMain.handle(IPC.deleteHistorySession, (_e, id: string) => getHistory()?.remove(String(id)) ?? false)
   ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
