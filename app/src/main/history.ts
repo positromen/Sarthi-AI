@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { sessionTitle } from '../shared/sessionTitle'
-import type { SessionRecord, SessionSummary, TranscriptTurn } from '../shared/types'
+import type { AiCall, SessionRecord, SessionSummary, SessionUsage, TranscriptTurn } from '../shared/types'
 
 // Session ids are start times in ms. Anything else coming from the renderer is refused before it touches the disk.
 const ID_PATTERN = /^\d{1,16}$/
@@ -18,6 +18,8 @@ export interface HistoryOptions {
   onChange?: () => void
 }
 
+const emptyUsage = (): SessionUsage => ({ audioSeconds: 0, aiCalls: 0, tokens: 0, estimated: false })
+
 function summarize(record: SessionRecord): SessionSummary {
   const title = sessionTitle(record)
   return {
@@ -29,6 +31,14 @@ function summarize(record: SessionRecord): SessionSummary {
     title: title.length > TITLE_LENGTH ? `${title.slice(0, TITLE_LENGTH - 1)}…` : title,
     hasNotes: Boolean(record.notes)
   }
+}
+
+function countCall(record: SessionRecord, call: AiCall | undefined): void {
+  if (!call) return
+  const usage = (record.usage ??= emptyUsage())
+  usage.aiCalls += 1
+  usage.tokens += call.inputTokens + call.outputTokens
+  usage.estimated ||= call.estimated
 }
 
 /** Saves each listening session (transcript + answers + notes) as one JSON file. Plain fs, so it is testable. */
@@ -52,7 +62,14 @@ export class HistoryStore {
 
   begin(now = Date.now()): void {
     if (this.current) this.finish(now)
-    this.current = { id: String(now), startedAt: now, endedAt: null, turns: [], answers: [], notes: null }
+    this.current = { id: String(now), startedAt: now, endedAt: null, turns: [], answers: [], notes: null, usage: emptyUsage() }
+  }
+
+  /** Audio streamed while listening. Saved with the next turn or at finish: frames arrive too often to save each. */
+  addAudio(seconds: number): void {
+    if (!this.current || !Number.isFinite(seconds) || seconds <= 0) return
+    this.current.usage ??= emptyUsage()
+    this.current.usage.audioSeconds += seconds
   }
 
   addTurn(turn: TranscriptTurn): void {
@@ -65,15 +82,17 @@ export class HistoryStore {
    * Records an answer. During a Listen session it joins that session; otherwise (a question typed without listening)
    * it goes into a "typed" session that collects answers less than 30 minutes apart.
    */
-  addAnswer(question: string, text: string, at = Date.now()): void {
+  addAnswer(question: string, text: string, at = Date.now(), call?: AiCall): void {
     if (this.current) {
       this.current.answers.push({ question, text, at })
+      countCall(this.current, call)
       this.scheduleSave()
       return
     }
     const previous = this.loose && at - this.loose.lastAt <= LOOSE_GAP_MS ? this.get(this.loose.id) : null
-    const record: SessionRecord = previous ?? { id: String(at), startedAt: at, endedAt: at, turns: [], answers: [], notes: null }
+    const record: SessionRecord = previous ?? { id: String(at), startedAt: at, endedAt: at, turns: [], answers: [], notes: null, usage: emptyUsage() }
     record.answers.push({ question, text, at })
+    countCall(record, call)
     record.endedAt = at
     this.write(record)
     this.loose = { id: record.id, lastAt: at }

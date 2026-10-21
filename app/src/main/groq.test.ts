@@ -135,3 +135,18 @@ describe('streamGroq', () => {
     ])
   })
 })
+
+describe('streamGroq usage', () => {
+  it('reports the token counts from the final chunk (x_groq or OpenAI-style usage)', async () => {
+    fetchMock.mockResolvedValueOnce(
+      okResponse(sse(delta({ content: 'Hi.' }), { choices: [], x_groq: { usage: { prompt_tokens: 70, completion_tokens: 25 } } }))
+    )
+    const onUsage = vi.fn()
+    await expect(run({ ...REQUEST, onUsage })).resolves.toBe('Hi.')
+    expect(onUsage).toHaveBeenLastCalledWith({ input: 70, output: 25 })
+
+    fetchMock.mockResolvedValueOnce(okResponse(sse(delta({ content: 'Hi.' }), { choices: [], usage: { prompt_tokens: 9, completion_tokens: 3 } })))
+    await run({ ...REQUEST, onUsage })
+    expect(onUsage).toHaveBeenLastCalledWith({ input: 9, output: 3 })
+  })
+})

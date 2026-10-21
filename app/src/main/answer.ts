@@ -1,11 +1,12 @@
 import { IPC } from '../shared/ipc'
-import type { AnswerState, TranscriptTurn } from '../shared/types'
+import type { AiCall, AnswerState, TranscriptTurn } from '../shared/types'
 import { getHistory } from './history'
 import { getKey } from './keys'
 import { streamAnswer } from './llm'
 import { buildSystemPrompt, buildUserPrompt } from './prompt'
 import { getScreenshotImages } from './screenshot'
 import { getSettings } from './store'
+import { getUsage } from './usage'
 import { broadcast } from './windows'
 
 // Used for a manual answer when nobody has asked anything yet but there is something on screen to solve.
@@ -44,12 +45,18 @@ export async function generateAnswer(question: string, context: readonly Transcr
   const settings = getSettings()
   try {
     let text = ''
+    let call: AiCall | undefined
     const request = {
       provider: settings.llmProvider,
       system: buildSystemPrompt(settings, q, images.length),
       user: buildUserPrompt(q, context, { screenshots: images.length, outputLanguage: settings.outputLanguage }),
       images,
-      signal: ctrl.signal
+      signal: ctrl.signal,
+      // Counted even when superseded: the provider billed it.
+      onUsage: (finished: AiCall) => {
+        getUsage()?.addAi(finished)
+        call = finished
+      }
     }
     // A missing key surfaces as the error state below, naming which keys to add.
     for await (const delta of streamAnswer(request, getKey)) {
@@ -59,7 +66,7 @@ export async function generateAnswer(question: string, context: readonly Transcr
     }
     if (superseded()) return
     setState({ status: 'done', text, question: q })
-    getHistory()?.addAnswer(q, text)
+    getHistory()?.addAnswer(q, text, Date.now(), call)
   } catch (error) {
     if (ctrl.signal.aborted || superseded()) return
     setState({ status: 'error', text: '', question: q, error: (error as Error).message })

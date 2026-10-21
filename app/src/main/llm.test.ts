@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ApiKeyName } from '../shared/types'
+import type { AiCall, ApiKeyName } from '../shared/types'
 import type { LlmRequest } from './llm-types'
 import { streamAnswer, type ProviderStreams } from './llm'
 
@@ -116,5 +116,38 @@ describe('streamAnswer', () => {
     const f = fakes({ gemini: new Error('Gemini down') })
     expect(await collect(streamAnswer({ ...base, provider: 'groq', images }, keys('gemini', 'groq', 'anthropic'), f.streams))).toBe('A')
     expect(f.calls.map((c) => c.provider)).toEqual(['gemini', 'anthropic'])
+  })
+})
+
+describe('streamAnswer usage', () => {
+  const answering = (text: string, usage?: { input: number; output: number }) =>
+    async function* (req: LlmRequest): AsyncGenerator<string> {
+      yield text
+      if (usage) req.onUsage?.(usage)
+    }
+  const failing = async function* (): AsyncGenerator<string> {
+    throw new Error('down')
+  }
+
+  it('reports the provider that answered, with the tokens it reported', async () => {
+    const calls: AiCall[] = []
+    const streams: ProviderStreams = { gemini: failing, groq: answering('Q', { input: 120, output: 40 }), anthropic: failing }
+    await collect(streamAnswer({ ...base, provider: 'gemini', onUsage: (c) => calls.push(c) }, keys('gemini', 'groq'), streams))
+    expect(calls).toEqual([{ provider: 'groq', inputTokens: 120, outputTokens: 40, estimated: false }])
+  })
+
+  it('estimates tokens from text length (about 4 characters each) when the provider reports none', async () => {
+    const calls: AiCall[] = []
+    const streams: ProviderStreams = { gemini: answering('x'.repeat(40)), groq: failing, anthropic: failing }
+    const req = { system: 's'.repeat(300), user: 'u'.repeat(100), provider: 'gemini' as const, onUsage: (c: AiCall) => calls.push(c) }
+    await collect(streamAnswer(req, keys('gemini'), streams))
+    expect(calls).toEqual([{ provider: 'gemini', inputTokens: 100, outputTokens: 10, estimated: true }])
+  })
+
+  it('still reports a call that was cut off after it started answering', async () => {
+    const calls: AiCall[] = []
+    const streams: ProviderStreams = { gemini: answering('first'), groq: failing, anthropic: failing }
+    for await (const _ of streamAnswer({ ...base, provider: 'gemini', onUsage: (c) => calls.push(c) }, keys('gemini'), streams)) break
+    expect(calls.map((c) => c.provider)).toEqual(['gemini'])
   })
 })

@@ -71,6 +71,13 @@ describe('streamAnthropic', () => {
     ])
   })
 
+  it('reports input and output tokens (thinking is billed as output)', async () => {
+    const fetchMock = vi.fn(async () => sse(message('end_turn', thinkingThenText('ok'))))
+    const onUsage = vi.fn()
+    await collect(streamAnthropic({ ...REQUEST, onUsage }, fetchMock as unknown as typeof fetch))
+    expect(onUsage).toHaveBeenCalledWith({ input: 10, output: 5 })
+  })
+
   it('treats a refusal with no answer as a failure, so the router can try another provider', async () => {
     const fetchMock = vi.fn(async () => sse(message('refusal', [])))
     await expect(collect(streamAnthropic(REQUEST, fetchMock as unknown as typeof fetch))).rejects.toThrow(/declined/i)

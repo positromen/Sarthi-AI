@@ -13,7 +13,8 @@ import type {
   SessionState,
   SessionSummary,
   Settings,
-  TranscriptTurn
+  TranscriptTurn,
+  UsageReport
 } from '../shared/types'
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {
@@ -79,6 +80,7 @@ const api = {
   getHistorySession: (id: string): Promise<SessionRecord | null> => ipcRenderer.invoke(IPC.getHistorySession, id),
   deleteHistorySession: (id: string): Promise<boolean> => ipcRenderer.invoke(IPC.deleteHistorySession, id),
   generateNotes: (id: string): Promise<SessionRecord> => ipcRenderer.invoke(IPC.generateNotes, id),
+  getUsage: (): Promise<UsageReport | null> => ipcRenderer.invoke(IPC.getUsage),
   onHistoryChanged: (callback: (sessions: SessionSummary[]) => void) => subscribe(IPC.historyChanged, callback)
 }
 

@@ -15,4 +15,11 @@ export interface LlmRequest {
   /** Overrides the default answer budget (e.g. for longer post-call notes). */
   maxOutputTokens?: number
   signal?: AbortSignal
+  /** Called with the token counts the provider reports (output includes any thinking it bills for). */
+  onUsage?: (tokens: TokenCount) => void
+}
+
+export interface TokenCount {
+  input: number
+  output: number
 }

@@ -78,8 +78,9 @@ export class DeepgramStream extends EventEmitter<DeepgramEvents> {
     this.socket = socket
   }
 
-  send(frame: ArrayBuffer): void {
-    if (this.socket?.readyState !== WebSocket.OPEN) return
+  /** Returns whether the frame went out (Deepgram bills only for audio it receives). */
+  send(frame: ArrayBuffer): boolean {
+    if (this.socket?.readyState !== WebSocket.OPEN) return false
     this.socket.send(frame)
     // When audio stops (silence skipped), have Deepgram finalize what it heard. The gate already sends enough
     // trailing silence for a normal turn end; this is the backstop so no words sit pending until the next burst.
@@ -88,6 +89,7 @@ export class DeepgramStream extends EventEmitter<DeepgramEvents> {
       this.audioGap = null
       this.sendJson({ type: 'Finalize' })
     }, AUDIO_GAP_MS)
+    return true
   }
 
   close(): void {

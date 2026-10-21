@@ -136,6 +136,43 @@ export interface SessionRecord {
   answers: HistoryAnswer[]
   /** Post-call coaching notes, once generated. */
   notes: string | null
+  /** What the session cost in API usage. Missing on sessions saved before usage was tracked. */
+  usage?: SessionUsage
+}
+
+/** One finished AI request, as the router reports it. */
+export interface AiCall {
+  provider: LlmProvider
+  inputTokens: number
+  outputTokens: number
+  /** The provider didn't report token counts, so they were estimated from text length. */
+  estimated: boolean
+}
+
+export interface AiUsage {
+  calls: number
+  inputTokens: number
+  outputTokens: number
+  /** At least one call's tokens were estimated. */
+  estimated: boolean
+}
+
+export interface UsageTotals {
+  /** Audio streamed to Deepgram, which bills by audio duration. */
+  audioSeconds: number
+  ai: Partial<Record<LlmProvider, AiUsage>>
+}
+
+export interface UsageReport {
+  today: UsageTotals
+  month: UsageTotals
+}
+
+export interface SessionUsage {
+  audioSeconds: number
+  aiCalls: number
+  tokens: number
+  estimated: boolean
 }
 
 export interface SessionSummary {

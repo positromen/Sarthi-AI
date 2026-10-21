@@ -12,6 +12,7 @@ import { captureScreenshot, listScreenshots, removeScreenshot } from './screensh
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, migrateLegacySettings, updateSettings } from './store'
 import { destroyTray, syncTray } from './tray'
+import { getUsage, initUsage } from './usage'
 import { validateKey } from './validate-keys'
 import {
   applyPrivacy,
@@ -107,6 +108,7 @@ function registerIpc(): void {
   ipcMain.handle(IPC.getHistorySession, (_e, id: string) => getHistory()?.get(String(id)) ?? null)
   ipcMain.handle(IPC.deleteHistorySession, (_e, id: string) => getHistory()?.remove(String(id)) ?? false)
   ipcMain.handle(IPC.generateNotes, (_e, id: string) => generateNotes(String(id)))
+  ipcMain.handle(IPC.getUsage, () => getUsage()?.report() ?? null)
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))
   ipcMain.on(IPC.overlayDrag, (_e, phase: unknown) => (phase === 'start' ? startOverlayDrag() : endOverlayDrag()))
@@ -126,6 +128,7 @@ app.whenReady().then(() => {
   const history = initHistory(join(app.getPath('userData'), 'history'), {
     onChange: () => broadcast(IPC.historyChanged, history.list())
   })
+  initUsage(join(app.getPath('userData'), 'usage.json'))
   registerIpc()
   registerLoopbackAudio()
   createOverlayWindow()
@@ -141,5 +144,6 @@ app.on('will-quit', () => {
   stopSession()
   // The socket's close event may not fire before the process exits, so save the running session now.
   getHistory()?.finish()
+  getUsage()?.flush()
 })
 app.on('window-all-closed', () => app.quit())

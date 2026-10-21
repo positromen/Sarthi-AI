@@ -1,11 +1,12 @@
 import { IPC } from '../shared/ipc'
 import type { SessionState, TranscriptTurn } from '../shared/types'
 import { generateAnswer } from './answer'
-import { DeepgramStream } from './deepgram'
+import { CHANNELS, DeepgramStream, SAMPLE_RATE } from './deepgram'
 import { getHistory } from './history'
 import { getKey } from './keys'
 import { isQuestion } from './question'
 import { getSettings } from './store'
+import { getUsage } from './usage'
 import { broadcast } from './windows'
 
 let stream: DeepgramStream | null = null
@@ -64,8 +65,14 @@ export function stopSession(): SessionState {
   return state
 }
 
+// Frames are 16-bit samples.
+const BYTES_PER_SECOND = SAMPLE_RATE * CHANNELS * 2
+
 export function pushAudioFrame(frame: ArrayBuffer): void {
-  stream?.send(frame)
+  if (!stream?.send(frame)) return
+  const seconds = frame.byteLength / BYTES_PER_SECOND
+  getUsage()?.addAudio(seconds)
+  getHistory()?.addAudio(seconds)
 }
 
 /**

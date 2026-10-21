@@ -27,6 +27,7 @@ export const IPC = {
   getHistorySession: 'history:get',
   deleteHistorySession: 'history:delete',
   generateNotes: 'history:notes',
+  getUsage: 'usage:get',
   historyChanged: 'history:changed',
   searchHistory: 'history:search',
   keysChanged: 'keys:changed',

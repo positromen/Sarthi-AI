@@ -28,6 +28,7 @@ export async function* streamAnthropic(req: LlmRequest, fetchImpl?: typeof fetch
   const answerBudget = req.maxOutputTokens ?? (req.images?.length ? 2048 : 1024)
   let refused = false
   let started = false
+  const tokens = { input: 0, output: 0 }
   try {
     const stream = client.beta.messages.stream(
       {
@@ -45,10 +46,16 @@ export async function* streamAnthropic(req: LlmRequest, fetchImpl?: typeof fetch
       if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
         started = true
         yield event.delta.text
-      } else if (event.type === 'message_delta' && event.delta.stop_reason === 'refusal') {
-        refused = true
+      } else if (event.type === 'message_start') {
+        const usage = event.message.usage
+        tokens.input = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0)
+      } else if (event.type === 'message_delta') {
+        // output_tokens is cumulative and includes thinking, which is billed as output.
+        tokens.output = event.usage.output_tokens
+        if (event.delta.stop_reason === 'refusal') refused = true
       }
     }
+    req.onUsage?.(tokens)
   } catch (error) {
     throw new Error(describeError(error))
   }

@@ -38,8 +38,20 @@ export async function* streamGemini(req: LlmRequest): AsyncGenerator<string> {
     signal: req.signal
   })
   for await (const payload of sseData(response)) {
-    const text = extractText(payload)
+    const json = parseJson(payload)
+    // Every chunk carries the running totals; the last one is final. Thinking is billed as output.
+    const usage = json?.usageMetadata
+    if (usage) req.onUsage?.({ input: usage.promptTokenCount ?? 0, output: (usage.candidatesTokenCount ?? 0) + (usage.thoughtsTokenCount ?? 0) })
+    const text = extractText(json)
     if (text) yield text
+  }
+}
+
+function parseJson(payload: string) {
+  try {
+    return JSON.parse(payload)
+  } catch {
+    return null
   }
 }
 
@@ -62,19 +74,14 @@ function requestBody(req: LlmRequest, model: ModelChoice): string {
   })
 }
 
-function extractText(payload: string): string {
-  try {
-    const json = JSON.parse(payload)
-    const parts = json?.candidates?.[0]?.content?.parts
-    if (!Array.isArray(parts)) return ''
-    // Skip reasoning ("thought") parts so they never leak into the spoken answer.
-    return parts
-      .filter((part: { thought?: boolean }) => !part?.thought)
-      .map((part: { text?: string }) => part?.text ?? '')
-      .join('')
-  } catch {
-    return ''
-  }
+function extractText(json: { candidates?: { content?: { parts?: unknown } }[] } | null): string {
+  const parts = json?.candidates?.[0]?.content?.parts
+  if (!Array.isArray(parts)) return ''
+  // Skip reasoning ("thought") parts so they never leak into the spoken answer.
+  return parts
+    .filter((part: { thought?: boolean }) => !part?.thought)
+    .map((part: { text?: string }) => part?.text ?? '')
+    .join('')
 }
 
 function describeError(status: number, body: string): string {

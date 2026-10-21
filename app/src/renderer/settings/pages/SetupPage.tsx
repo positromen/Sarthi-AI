@@ -1,9 +1,10 @@
 // Setup · API keys (design B6). Keys are checked with their provider before saving and never shown again.
 import { useEffect, useState } from 'react'
-import type { ApiKeyName, ApiKeyStatus } from '../../../shared/types'
+import type { AiUsage, ApiKeyName, ApiKeyStatus, LlmProvider, UsageReport, UsageTotals } from '../../../shared/types'
+import { formatAudio, formatTokens } from '../../../shared/usageFormat'
 import { Badge, Button, Input, useToast } from '../../ui/components'
 import { Icon } from '../../ui/icons'
-import { Card, ExternalLink, PageHeader } from '../layout'
+import { Card, ExternalLink, PageHeader, Row, SectionTitle } from '../layout'
 
 interface KeyInfo {
   name: ApiKeyName
@@ -108,6 +109,53 @@ export function KeyRow({ info, saved, onSaved }: { info: KeyInfo; saved: boolean
   )
 }
 
+const AI_PROVIDERS: { name: LlmProvider; label: string }[] = [
+  { name: 'gemini', label: 'Gemini' },
+  { name: 'groq', label: 'Groq' },
+  { name: 'anthropic', label: 'Claude' }
+]
+
+const aiLine = (ai: AiUsage | undefined): string =>
+  ai ? `${ai.calls} ${ai.calls === 1 ? 'call' : 'calls'} · ${ai.estimated ? '≈' : ''}${formatTokens(ai.inputTokens + ai.outputTokens)} tokens` : 'none'
+
+function UsageFigures({ today, month }: { today: string; month: string }) {
+  return (
+    <div className="flex shrink-0 flex-col items-end gap-0.5 text-[12.5px] tabular-nums">
+      <span className="text-fg">{today} today</span>
+      <span className="text-fg-3">{month} this month</span>
+    </div>
+  )
+}
+
+function UsageCard() {
+  const [report, setReport] = useState<UsageReport | null>(null)
+  useEffect(() => {
+    window.sarthi.getUsage().then(setReport)
+  }, [])
+  if (!report) return null
+  const used = (totals: UsageTotals) => AI_PROVIDERS.filter((p) => totals.ai[p.name])
+  const providers = used(report.month)
+  return (
+    <>
+      <SectionTitle>Usage</SectionTitle>
+      <Card>
+        <Row label="Deepgram" hint="Audio transcribed">
+          <UsageFigures today={formatAudio(report.today.audioSeconds)} month={formatAudio(report.month.audioSeconds)} />
+        </Row>
+        {providers.map((p) => (
+          <Row key={p.name} label={p.label} hint="Answers and notes">
+            <UsageFigures today={aiLine(report.today.ai[p.name])} month={aiLine(report.month.ai[p.name])} />
+          </Row>
+        ))}
+        {providers.length === 0 && <Row label="AI answers" hint="No answers yet this month" />}
+      </Card>
+      <p className="mt-3 text-[12px] text-fg-3">
+        Counted on this PC. ≈ marks estimated tokens. Free-tier limits change, so check them in each provider's console.
+      </p>
+    </>
+  )
+}
+
 export function SetupPage({ onRunGuide }: { onRunGuide: () => void }) {
   const [status, setStatus] = useKeyStatusLive()
   return (
@@ -130,6 +178,7 @@ export function SetupPage({ onRunGuide }: { onRunGuide: () => void }) {
         <Icon name="lock" size={13} />
         Keys are encrypted with Windows (DPAPI) and stay on this PC. A saved key is never shown again.
       </p>
+      <UsageCard />
     </>
   )
 }

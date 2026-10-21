@@ -60,18 +60,18 @@ export async function* streamGroq(req: LlmRequest): AsyncGenerator<string> {
     signal: req.signal
   })
   for await (const payload of sseData(response)) {
-    const text = extractText(payload)
-    if (text) yield text
-  }
-}
-
-// Only `content` is the answer; `reasoning` deltas (if any slip through) are dropped.
-function extractText(payload: string): string {
-  try {
-    const content = JSON.parse(payload)?.choices?.[0]?.delta?.content
-    return typeof content === 'string' ? content : ''
-  } catch {
-    return ''
+    let json
+    try {
+      json = JSON.parse(payload)
+    } catch {
+      continue
+    }
+    // The final chunk carries the totals: Groq's own `x_groq.usage`, or OpenAI-style `usage`.
+    const usage = json?.x_groq?.usage ?? json?.usage
+    if (usage) req.onUsage?.({ input: usage.prompt_tokens ?? 0, output: usage.completion_tokens ?? 0 })
+    // Only `content` is the answer; `reasoning` deltas (if any slip through) are dropped.
+    const content = json?.choices?.[0]?.delta?.content
+    if (typeof content === 'string' && content) yield content
   }
 }
 

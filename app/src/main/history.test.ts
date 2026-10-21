@@ -160,3 +160,27 @@ describe('session titles', () => {
     expect(store.finish(2000)?.title).toBe('What is the hardest scaling problem you have solved?')
   })
 })
+
+describe('session usage', () => {
+  const call = (inputTokens: number, outputTokens: number, estimated = false) =>
+    ({ provider: 'gemini', inputTokens, outputTokens, estimated }) as const
+
+  it('totals audio, AI calls and tokens for a Listen session', () => {
+    const store = new HistoryStore(dir)
+    store.begin(1000)
+    store.addAudio(30)
+    store.addAudio(15.5)
+    store.addTurn(turn('interviewer', 'Why Kafka?'))
+    store.addAnswer('Why Kafka?', 'Throughput.', 1100, call(900, 100))
+    store.addAnswer('And Flink?', 'State.', 1200, call(400, 50, true))
+    store.finish(2000)
+    expect(store.get('1000')?.usage).toEqual({ audioSeconds: 45.5, aiCalls: 2, tokens: 1450, estimated: true })
+  })
+
+  it('counts typed answers outside a session too, with no audio', () => {
+    const store = new HistoryStore(dir)
+    store.addAudio(10) // not listening: nowhere to add it
+    store.addAnswer('Why us?', 'Because.', 1_000, call(300, 20))
+    expect(store.get('1000')?.usage).toEqual({ audioSeconds: 0, aiCalls: 1, tokens: 320, estimated: false })
+  })
+})

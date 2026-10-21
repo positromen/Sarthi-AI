@@ -1,10 +1,10 @@
 // Routes an answer request to the provider the user chose, falling back to the others on failure.
 // Pure routing: keys and provider clients are passed in, so this stays testable without Electron.
-import type { ApiKeyName, LlmProvider } from '../shared/types'
+import type { AiCall, ApiKeyName, LlmProvider } from '../shared/types'
 import { streamAnthropic } from './anthropic'
 import { streamGemini } from './gemini'
 import { streamGroq } from './groq'
-import type { LlmRequest } from './llm-types'
+import type { LlmRequest, TokenCount } from './llm-types'
 
 export type ProviderStreams = Record<LlmProvider, (req: LlmRequest) => AsyncGenerator<string>>
 
@@ -19,13 +19,26 @@ function providerOrder(preferred: LlmProvider, hasImages: boolean): LlmProvider[
   return [preferred, ...FALLBACK_ORDER.filter((provider) => provider !== preferred)]
 }
 
+// Rough English average, for providers that don't report token counts.
+const CHARS_PER_TOKEN = 4
+
+function callUsage(provider: LlmProvider, reported: TokenCount | null, prompt: string, answer: string): AiCall {
+  if (reported) return { provider, inputTokens: reported.input, outputTokens: reported.output, estimated: false }
+  return {
+    provider,
+    inputTokens: Math.ceil(prompt.length / CHARS_PER_TOKEN),
+    outputTokens: Math.ceil(answer.length / CHARS_PER_TOKEN),
+    estimated: true
+  }
+}
+
 /**
  * Streams an answer from the chosen provider. If it fails before sending any text, the next provider with a key is
  * tried; once text has streamed, a failure is final, since splicing two models' answers together would read as
- * nonsense.
+ * nonsense. `onUsage` hears about every call that produced text, including one cut off midway (it was billed).
  */
 export async function* streamAnswer(
-  req: Omit<LlmRequest, 'apiKey'> & { provider: LlmProvider },
+  req: Omit<LlmRequest, 'apiKey' | 'onUsage'> & { provider: LlmProvider; onUsage?: (call: AiCall) => void },
   getKey: (name: ApiKeyName) => string | null,
   streams: ProviderStreams = PROVIDERS
 ): AsyncGenerator<string> {
@@ -35,9 +48,13 @@ export async function* streamAnswer(
   let firstError: Error | null = null
   for (const provider of order) {
     let started = false
+    let answer = ''
+    let reported: TokenCount | null = null
+    const { onUsage, ...request } = req
     try {
-      for await (const delta of streams[provider]({ ...req, apiKey: getKey(provider)! })) {
+      for await (const delta of streams[provider]({ ...request, apiKey: getKey(provider)!, onUsage: (t) => (reported = t) })) {
         started = true
+        answer += delta
         yield delta
       }
       return
@@ -45,6 +62,8 @@ export async function* streamAnswer(
       if (started || req.signal?.aborted) throw error
       firstError ??= error as Error
       console.warn(`${provider} failed, trying the next provider:`, (error as Error).message)
+    } finally {
+      if (started) onUsage?.(callUsage(provider, reported, req.system + req.user, answer))
     }
   }
   throw firstError!

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sessionTitle } from '../../../shared/sessionTitle'
 import type { SessionRecord, SessionSummary } from '../../../shared/types'
+import { sessionUsageLine } from '../../../shared/usageFormat'
 import { AnswerContent } from '../../overlay/AnswerContent'
 import { keysFor } from '../../shortcuts'
 import { Badge, Button, EmptyState, Keys, Segmented } from '../../ui/components'
@@ -116,6 +117,7 @@ function SessionDetail({ id }: { id: string }) {
     hasNotes: Boolean(record.notes)
   }
   const title = sessionTitle(record)
+  const usage = sessionUsageLine(record.usage)
   const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: 'notes', label: 'Notes' },
     { key: 'answers', label: 'Answers', count: record.answers.length },
@@ -130,6 +132,7 @@ function SessionDetail({ id }: { id: string }) {
           <span className="text-xs text-fg-3">
             {formatFullDate(record.startedAt)} · {sessionMeta(summary)}
           </span>
+          {usage && <span className="text-xs text-fg-3 tabular-nums">{usage}</span>}
         </div>
         <div className="flex items-center gap-2">
           <Button

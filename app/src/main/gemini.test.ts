@@ -136,3 +136,21 @@ describe('streamGemini', () => {
     expect(fetchMock.mock.calls.map(modelOf)).toEqual([LITE, LITE, LITE, FLASH, FLASH, FLASH])
   })
 })
+
+describe('streamGemini usage', () => {
+  it('reports the final token counts, thinking included in output', async () => {
+    fetchMock.mockResolvedValueOnce(
+      okResponse(
+        sse(
+          { ...chunk({ text: 'Hi.' }), usageMetadata: { promptTokenCount: 50 } },
+          { ...chunk({ text: '' }), usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 12, thoughtsTokenCount: 30 } }
+        )
+      )
+    )
+    const onUsage = vi.fn()
+    const result = collect(streamGemini({ ...REQUEST, onUsage }))
+    await vi.runAllTimersAsync()
+    await expect(result).resolves.toBe('Hi.')
+    expect(onUsage).toHaveBeenLastCalledWith({ input: 50, output: 42 })
+  })
+})
