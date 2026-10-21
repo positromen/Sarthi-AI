@@ -16,5 +16,9 @@ export const IPC = {
   generateAnswer: 'answer:generate',
   getAnswerState: 'answer:get',
   answerState: 'answer:state',
-  importDocument: 'document:import'
+  importDocument: 'document:import',
+  getScreenshots: 'screenshot:list',
+  captureScreenshot: 'screenshot:capture',
+  removeScreenshot: 'screenshot:remove',
+  screenshotsChanged: 'screenshot:changed'
 } as const

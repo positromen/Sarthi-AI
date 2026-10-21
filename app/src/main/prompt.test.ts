@@ -43,4 +43,10 @@ describe('buildUserPrompt', () => {
     expect(prompt).toContain('Interviewer:')
     expect(prompt).toContain('Me:')
   })
+
+  it('mentions attached screenshots only when there are some', () => {
+    expect(buildUserPrompt('Solve this.', [], 2)).toMatch(/2 screenshots/)
+    expect(buildUserPrompt('Solve this.', [], 1)).toMatch(/1 screenshot\b/)
+    expect(buildUserPrompt('Solve this.', [])).not.toMatch(/screenshot/i)
+  })
 })

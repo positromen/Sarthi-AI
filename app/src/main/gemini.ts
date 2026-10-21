@@ -22,10 +22,18 @@ const endpoint = (model: string): string =>
 const RETRYABLE = new Set([429, 500, 502, 503, 504])
 const MAX_ATTEMPTS = 3
 
+export interface GeminiImage {
+  mimeType: string
+  /** Base64-encoded image bytes. */
+  data: string
+}
+
 export interface GeminiRequest {
   apiKey: string
   system: string
   user: string
+  /** Screenshots sent with the question (e.g. a coding problem on screen). */
+  images?: readonly GeminiImage[]
   signal?: AbortSignal
 }
 
@@ -53,11 +61,18 @@ export async function* streamGemini(req: GeminiRequest): AsyncGenerator<string> 
 }
 
 function requestBody(req: GeminiRequest, model: ModelChoice): string {
+  const images = req.images ?? []
+  // Images go first, as Gemini recommends; the question text then refers to them.
+  const parts = [
+    ...images.map(({ mimeType, data }) => ({ inlineData: { mimeType, data } })),
+    { text: req.user }
+  ]
   return JSON.stringify({
     systemInstruction: { parts: [{ text: req.system }] },
-    contents: [{ role: 'user', parts: [{ text: req.user }] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: {
-      maxOutputTokens: 1024,
+      // A screenshot is usually a coding problem, whose answer (code + explanation) needs more room.
+      maxOutputTokens: images.length > 0 ? 2048 : 1024,
       temperature: 0.7,
       thinkingConfig: { thinkingLevel: model.thinkingLevel }
     }

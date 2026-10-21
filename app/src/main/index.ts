@@ -6,6 +6,7 @@ import { getAnswerState } from './answer'
 import { DOCUMENT_EXTENSIONS, extractDocumentText } from './documents'
 import { registerHotkeys } from './hotkeys'
 import { getKeyStatus, setKey } from './keys'
+import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, migrateLegacySettings, updateSettings } from './store'
 import {
@@ -70,6 +71,9 @@ function registerIpc(): void {
   ipcMain.handle(IPC.generateAnswer, () => requestManualAnswer())
   ipcMain.handle(IPC.getAnswerState, () => getAnswerState())
   ipcMain.handle(IPC.importDocument, () => importDocument())
+  ipcMain.handle(IPC.getScreenshots, () => listScreenshots())
+  ipcMain.handle(IPC.captureScreenshot, () => captureScreenshot())
+  ipcMain.handle(IPC.removeScreenshot, (_e, id: number) => removeScreenshot(id))
   ipcMain.on(IPC.audioFrame, (_e, frame: ArrayBuffer) => pushAudioFrame(frame))
   ipcMain.on(IPC.setOverlayInteractive, (_e, interactive: boolean) => setOverlayInteractive(interactive))
   ipcMain.on(IPC.openSettings, () => openSettingsWindow())

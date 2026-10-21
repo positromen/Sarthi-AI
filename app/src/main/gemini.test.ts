@@ -103,6 +103,32 @@ describe('streamGemini', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('sends screenshots as inlineData parts ahead of the question text', async () => {
+    fetchMock.mockResolvedValueOnce(okResponse(sse(chunk({ text: 'def solve(): ...' }))))
+
+    const images = [
+      { mimeType: 'image/jpeg', data: 'AAAA' },
+      { mimeType: 'image/jpeg', data: 'BBBB' }
+    ]
+    await collect(streamGemini({ ...REQUEST, images }))
+    const body = bodyOf(fetchMock.mock.calls[0])
+    expect(body.contents[0].parts).toEqual([
+      { inlineData: { mimeType: 'image/jpeg', data: 'AAAA' } },
+      { inlineData: { mimeType: 'image/jpeg', data: 'BBBB' } },
+      { text: REQUEST.user }
+    ])
+    expect(body.generationConfig.maxOutputTokens).toBeGreaterThan(1024)
+  })
+
+  it('sends a text-only request when there are no screenshots', async () => {
+    fetchMock.mockResolvedValueOnce(okResponse(sse(chunk({ text: 'Hi.' }))))
+
+    await collect(streamGemini(REQUEST))
+    const body = bodyOf(fetchMock.mock.calls[0])
+    expect(body.contents[0].parts).toEqual([{ text: REQUEST.user }])
+    expect(body.generationConfig.maxOutputTokens).toBe(1024)
+  })
+
   it('throws the last error once every model is exhausted', async () => {
     fetchMock.mockResolvedValue(errorResponse(429))
 

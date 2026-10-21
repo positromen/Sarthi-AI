@@ -65,7 +65,15 @@ export interface SessionState {
   error?: string
 }
 
-export type AnswerStatus = 'idle' | 'thinking' | 'streaming' | 'done' | 'error'
+/** A captured screenshot as the overlay sees it; the full-size image stays in main. */
+export interface ScreenshotInfo {
+  id: number
+  /** Small PNG data URL for the overlay strip. */
+  thumbnail: string
+  at: number
+}
+
+export type AnswerStatus ='idle' | 'thinking' | 'streaming' | 'done' | 'error'
 
 export interface AnswerState {
   status: AnswerStatus

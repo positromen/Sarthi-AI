@@ -3,8 +3,12 @@ import type { AnswerState, TranscriptTurn } from '../shared/types'
 import { streamGemini } from './gemini'
 import { getKey } from './keys'
 import { buildSystemPrompt, buildUserPrompt } from './prompt'
+import { getScreenshotImages } from './screenshot'
 import { getSettings } from './store'
 import { broadcast } from './windows'
+
+// Used for a manual answer when nobody has asked anything yet but there is something on screen to solve.
+const SCREEN_QUESTION = 'Solve or answer what is shown in the screenshots.'
 
 let state: AnswerState = { status: 'idle', text: '', question: null }
 // A monotonically increasing token: a newer question supersedes any answer still streaming.
@@ -21,9 +25,10 @@ export function getAnswerState(): AnswerState {
 }
 
 export async function generateAnswer(question: string, context: readonly TranscriptTurn[]): Promise<void> {
-  const q = question.trim()
+  const images = getScreenshotImages()
+  const q = question.trim() || (images.length > 0 ? SCREEN_QUESTION : '')
   if (!q) {
-    setState({ status: 'error', text: '', question: null, error: 'No interviewer question yet — start listening first.' })
+    setState({ status: 'error', text: '', question: null, error: 'No interviewer question yet — start listening, or take a screenshot (Ctrl+Shift+C).' })
     return
   }
 
@@ -46,7 +51,8 @@ export async function generateAnswer(question: string, context: readonly Transcr
     for await (const delta of streamGemini({
       apiKey,
       system: buildSystemPrompt(settings),
-      user: buildUserPrompt(q, context),
+      user: buildUserPrompt(q, context, images.length),
+      images,
       signal: ctrl.signal
     })) {
       if (superseded()) return

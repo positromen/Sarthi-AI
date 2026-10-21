@@ -49,13 +49,19 @@ export function buildSystemPrompt(settings: Settings): string {
   return lines.join('\n')
 }
 
-export function buildUserPrompt(question: string, turns: readonly TranscriptTurn[]): string {
+export function buildUserPrompt(question: string, turns: readonly TranscriptTurn[], screenshotCount = 0): string {
   const recent = turns
     .slice(-CONTEXT_TURNS)
     .map((turn) => `${turn.speaker === 'you' ? 'Me' : 'Interviewer'}: ${turn.text}`)
     .join('\n')
+  const screenshots =
+    screenshotCount > 0 &&
+    `I've attached ${screenshotCount} ${screenshotCount === 1 ? 'screenshot' : 'screenshots'} of my screen, oldest first. ` +
+      'Use them when the question is about what is on screen. For a coding problem, give working code in a fenced ' +
+      'code block plus a brief explanation of the approach and its complexity.'
   return [
     recent && `Recent conversation:\n${recent}`,
+    screenshots,
     `The interviewer just asked:\n"${question}"`,
     'Give me the answer I should say.'
   ]

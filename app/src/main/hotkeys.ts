@@ -1,6 +1,7 @@
 import { globalShortcut } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { Hotkey } from '../shared/types'
+import { captureScreenshot } from './screenshot'
 import { getSettings, updateSettings } from './store'
 import {
   broadcast,
@@ -21,6 +22,9 @@ export function registerHotkeys(): void {
     'CommandOrControl+Shift+L': () => sendHotkey('toggle-listening'),
     'CommandOrControl+Shift+Up': () => sendHotkey('scroll-up'),
     'CommandOrControl+Shift+Down': () => sendHotkey('scroll-down'),
+    'CommandOrControl+Shift+C': () => {
+      captureScreenshot().catch((error) => console.warn('Screenshot failed:', error))
+    },
     'CommandOrControl+Shift+H': toggleOverlayVisible,
     'CommandOrControl+Shift+S': openSettingsWindow,
     'CommandOrControl+Shift+P': () => {

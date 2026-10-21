@@ -3,6 +3,7 @@ import type { Speaker } from '../../shared/types'
 import { useSettings } from '../useSettings'
 import { useAnswer } from './useAnswer'
 import { useListening } from './useListening'
+import { useScreenshots } from './useScreenshots'
 
 const SCROLL_STEP = 120
 
@@ -33,6 +34,7 @@ export function Overlay() {
   const [settings] = useSettings()
   const listening = useListening()
   const { answer, generate } = useAnswer()
+  const screenshots = useScreenshots()
   const answerRef = useRef<HTMLDivElement>(null)
   const transcriptRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef(listening.toggle)
@@ -95,6 +97,13 @@ export function Overlay() {
               {active ? 'Stop' : 'Listen'}
             </button>
             <button
+              className="rounded px-2 py-0.5 text-[11px] font-medium text-white/60 hover:bg-white/10 hover:text-white"
+              onClick={screenshots.capture}
+              title="Screenshot the screen for the next answer (Ctrl+Shift+C)"
+            >
+              Shot
+            </button>
+            <button
               className="rounded px-1.5 text-white/50 hover:bg-white/10 hover:text-white"
               onClick={() => window.sarthi.openSettings()}
               title="Settings (Ctrl+Shift+S)"
@@ -112,6 +121,24 @@ export function Overlay() {
           <div className="flex gap-4 border-b border-line px-3 py-1.5">
             <LevelMeter label="You (mic)" level={levels.mic} />
             <LevelMeter label="Interviewer" level={levels.system} />
+          </div>
+        )}
+
+        {screenshots.shots.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto border-b border-line px-3 py-1.5">
+            {screenshots.shots.map((shot) => (
+              <div key={shot.id} className="group relative shrink-0">
+                <img src={shot.thumbnail} alt="Screenshot" className="h-12 rounded border border-line" />
+                <button
+                  className="absolute top-0.5 right-0.5 hidden h-4 w-4 items-center justify-center rounded-full bg-black/80 text-[10px] text-white/80 group-hover:flex hover:text-white"
+                  onClick={() => screenshots.remove(shot.id)}
+                  title="Remove screenshot"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <span className="shrink-0 text-[10px] text-white/40">sent with each answer</span>
           </div>
         )}
 
@@ -156,7 +183,7 @@ export function Overlay() {
         </div>
 
         <footer className="border-t border-line px-3 py-1.5 text-[10px] text-white/35">
-          Ctrl+Shift+L listen · Ctrl+Shift+Enter answer · Ctrl+Shift+H hide · Ctrl+Shift+P private · Ctrl+Alt+Arrows move
+          Ctrl+Shift+L listen · Ctrl+Shift+Enter answer · Ctrl+Shift+C screenshot · Ctrl+Shift+H hide · Ctrl+Shift+P private · Ctrl+Alt+Arrows move
         </footer>
       </div>
     </div>

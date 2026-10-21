@@ -6,6 +6,7 @@ import type {
   ApiKeyStatus,
   Hotkey,
   InterimTranscript,
+  ScreenshotInfo,
   SessionState,
   Settings,
   TranscriptTurn
@@ -41,7 +42,12 @@ const api = {
   generateAnswer: (): Promise<void> => ipcRenderer.invoke(IPC.generateAnswer),
   getAnswerState: (): Promise<AnswerState> => ipcRenderer.invoke(IPC.getAnswerState),
   onAnswerState: (callback: (state: AnswerState) => void) => subscribe(IPC.answerState, callback),
-  importDocument: (): Promise<{ name: string; text: string } | null> => ipcRenderer.invoke(IPC.importDocument)
+  importDocument: (): Promise<{ name: string; text: string } | null> => ipcRenderer.invoke(IPC.importDocument),
+  getScreenshots: (): Promise<ScreenshotInfo[]> => ipcRenderer.invoke(IPC.getScreenshots),
+  captureScreenshot: (): Promise<ScreenshotInfo[]> => ipcRenderer.invoke(IPC.captureScreenshot),
+  removeScreenshot: (id: number): Promise<ScreenshotInfo[]> => ipcRenderer.invoke(IPC.removeScreenshot, id),
+  onScreenshotsChanged: (callback: (shots: ScreenshotInfo[]) => void) =>
+    subscribe(IPC.screenshotsChanged, callback)
 }
 
 export type SarthiApi = typeof api
