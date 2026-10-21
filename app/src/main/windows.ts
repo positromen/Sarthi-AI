@@ -41,7 +41,8 @@ export function createOverlayWindow(): BrowserWindow {
     skipTaskbar: true,
     hiddenInMissionControl: true,
     alwaysOnTop: true,
-    focusable: true,
+    // Clicking the overlay must never pull focus from the meeting app; only the ask box asks for focus, briefly.
+    focusable: false,
     type: 'panel',
     show: false,
     webPreferences: { preload: preloadPath(), backgroundThrottling: false }
@@ -93,13 +94,25 @@ export function toggleOverlayVisible(): void {
   else win.showInactive()
 }
 
-/** Gives the overlay keyboard focus so a question can be typed (this does take focus from the meeting app). */
-export function focusOverlay(): void {
+/**
+ * The overlay is normally non-focusable, so its buttons work without taking focus from the meeting app. Typing a
+ * question needs keyboard focus: the ask box turns it on while in use and off again on Enter, Esc or blur.
+ */
+export function setOverlayFocusable(focusable: boolean): void {
   const win = getOverlay()
   if (!win) return
-  if (!win.isVisible()) win.showInactive()
-  win.focus()
+  if (focusable) {
+    win.setFocusable(true)
+    if (!win.isVisible()) win.showInactive()
+    win.focus()
+  } else {
+    win.blur()
+    win.setFocusable(false)
+  }
 }
+
+/** The "type a question" hotkey: focus the overlay so its ask box can take the keystrokes. */
+export const focusOverlay = (): void => setOverlayFocusable(true)
 
 export function moveOverlay(dx: number, dy: number): void {
   const win = getOverlay()

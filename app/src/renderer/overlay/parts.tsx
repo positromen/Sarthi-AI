@@ -1,6 +1,6 @@
 // The overlay card's sections (Sarthi UI design, states A1–A16). Everything clickable lives inside the card: the
 // window ignores the mouse elsewhere, so nothing here may float outside it.
-import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode, type RefObject } from 'react'
 import type { AnswerState, ApiKeyName, ListeningStatus, ScreenshotInfo, Speaker, TranscriptTurn } from '../../shared/types'
 import type { AudioLevels } from '../audio/capture'
 import { keysFor, shortcutLabel, shortcuts } from '../shortcuts'
@@ -456,14 +456,27 @@ export function AskBox({ inputRef, onAsk }: { inputRef: RefObject<HTMLInputEleme
     if (!hasText) return
     onAsk(typed)
     setTyped('')
+    inputRef.current?.blur()
+  }
+  // The overlay window is non-focusable so clicks never steal focus from the meeting. Typing is the exception:
+  // take focus on the first click, and hand it back (blur) after Enter, Esc or clicking elsewhere.
+  const takeFocus = async (event: MouseEvent) => {
+    if (document.hasFocus()) return
+    event.preventDefault()
+    await window.sarthi.setOverlayFocusable(true)
+    inputRef.current?.focus()
   }
   return (
     <form onSubmit={submit} className="flex shrink-0 items-center gap-1.5 border-t border-line py-2 pr-2 pl-2.5">
-      <label className="group flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-ink pr-1.5 pl-2.5 transition-[border-color,box-shadow] duration-120 focus-within:border-leaf focus-within:shadow-[0_0_0_3px_rgba(74,222,128,0.18)]">
+      <label
+        onMouseDown={(e) => void takeFocus(e)}
+        className="group flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border border-line bg-ink pr-1.5 pl-2.5 transition-[border-color,box-shadow] duration-120 focus-within:border-leaf focus-within:shadow-[0_0_0_3px_rgba(74,222,128,0.18)]"
+      >
         <input
           ref={inputRef}
           value={typed}
           onChange={(e) => setTyped(e.target.value)}
+          onBlur={() => void window.sarthi.setOverlayFocusable(false)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') {
               setTyped('')

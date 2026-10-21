@@ -34,6 +34,8 @@ const api = {
   onHotkey: (callback: (key: Hotkey) => void) => subscribe(IPC.hotkey, callback),
   setOverlayInteractive: (interactive: boolean) =>
     ipcRenderer.send(IPC.setOverlayInteractive, interactive),
+  /** The overlay only takes keyboard focus while the ask box is in use; resolves once main has applied it. */
+  setOverlayFocusable: (focusable: boolean): Promise<void> => ipcRenderer.invoke(IPC.setOverlayFocusable, focusable),
   /** Opens the Control Center, optionally on a page ("setup", "history", …). */
   openSettings: (page?: string) => ipcRenderer.send(IPC.openSettings, page),
   onNavigate: (callback: (page: string) => void) => subscribe(IPC.navigate, callback),

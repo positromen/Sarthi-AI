@@ -1,7 +1,7 @@
 // Privacy & overlay (design B10): private mode, overlay opacity with a live preview, silence skipping, screenshots.
 import type { Settings, VadSensitivity } from '../../../shared/types'
 import { keysFor } from '../../shortcuts'
-import { Badge, Keys, Segmented, Toggle } from '../../ui/components'
+import { Keys, Segmented, Toggle } from '../../ui/components'
 import { Icon } from '../../ui/icons'
 import { Card, PageHeader, Row, SectionTitle } from '../layout'
 
@@ -54,6 +54,11 @@ export function PrivacyPage({ settings, update }: { settings: Settings; update: 
             : 'Off · the overlay and this window are visible to screen share'}
         </div>
       </Card>
+      <p className="mt-2 text-[12px] leading-normal text-fg-3">
+        Private mode uses Windows' own capture exclusion, so screen shares and recordings leave these windows out entirely
+        (Windows 10 version 2004 or later; older versions show a black box instead). Clicking the overlay never takes
+        focus from your meeting; only the ask box does, while you type.
+      </p>
 
       <SectionTitle>Overlay</SectionTitle>
       <Card className="flex flex-col gap-3 p-4">
@@ -111,13 +116,6 @@ export function PrivacyPage({ settings, update }: { settings: Settings; update: 
             checked={settings.screenshotsEnabled}
             onChange={(screenshotsEnabled) => update({ screenshotsEnabled })}
           />
-        </Row>
-      </Card>
-
-      <SectionTitle>Coming soon</SectionTitle>
-      <Card>
-        <Row label="Ultra stealth mode" hint="Extra hiding beyond private mode (taskbar, Alt+Tab).">
-          <Badge tone="soon">Coming soon</Badge>
         </Row>
       </Card>
     </>
