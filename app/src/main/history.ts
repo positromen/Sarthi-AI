@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { sessionTitle } from '../shared/sessionTitle'
+import { insertByTime } from '../shared/transcript'
 import type { AiCall, SessionRecord, SessionSummary, SessionUsage, TranscriptTurn } from '../shared/types'
 
 // Session ids are start times in ms. Anything else coming from the renderer is refused before it touches the disk.
@@ -74,7 +75,7 @@ export class HistoryStore {
 
   addTurn(turn: TranscriptTurn): void {
     if (!this.current) return
-    this.current.turns.push(turn)
+    this.current.turns = insertByTime(this.current.turns, turn)
     this.scheduleSave()
   }
 

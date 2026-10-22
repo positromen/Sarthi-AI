@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { InterimTranscript, SessionState, Speaker, TranscriptTurn } from '../../shared/types'
 import { startCapture, type AudioLevels, type Capture } from '../audio/capture'
+import { insertByTime } from '../../shared/transcript'
 
 const MAX_TURNS = 50
 
@@ -19,7 +20,8 @@ export function useListening() {
         setInterim((prev) => ({ ...prev, [speaker]: text }))
       ),
       window.sarthi.onTranscriptTurn((turn) => {
-        setTurns((prev) => [...prev, turn].slice(-MAX_TURNS))
+        // My lines arrive a few seconds late (echo check in main), so place each one by when it was said.
+        setTurns((prev) => insertByTime(prev, turn).slice(-MAX_TURNS))
         setInterim((prev) => ({ ...prev, [turn.speaker]: undefined }))
       })
     ]

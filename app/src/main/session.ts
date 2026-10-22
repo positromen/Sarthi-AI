@@ -1,4 +1,5 @@
 import { IPC } from '../shared/ipc'
+import { ECHO_HOLD_MS, insertByTime, isEcho } from '../shared/transcript'
 import type { SessionState, TranscriptTurn } from '../shared/types'
 import { generateAnswer } from './answer'
 import { CHANNELS, DeepgramStream, SAMPLE_RATE } from './deepgram'
@@ -13,6 +14,8 @@ let stream: DeepgramStream | null = null
 let turns: TranscriptTurn[] = []
 let nextTurnId = 1
 let state: SessionState = { status: 'idle' }
+// My lines wait here for ECHO_HOLD_MS before they are shown, in case they are the interviewer heard through speakers.
+const held = new Map<TranscriptTurn, NodeJS.Timeout>()
 
 function setState(next: SessionState): SessionState {
   state = next
@@ -41,23 +44,39 @@ export function startSession(): SessionState {
   stream.on('interim', (speaker, text) => broadcast(IPC.transcriptInterim, { speaker, text }))
   stream.on('turn', (speaker, text) => {
     const turn: TranscriptTurn = { id: nextTurnId++, speaker, text, at: Date.now() }
-    turns.push(turn)
-    getHistory()?.addTurn(turn)
-    broadcast(IPC.transcriptTurn, turn)
-    if (speaker === 'interviewer' && getSettings().autoAnswer && isQuestion(text)) {
-      void generateAnswer(text, turns)
+    if (speaker === 'you') {
+      held.set(turn, setTimeout(() => release(turn), ECHO_HOLD_MS))
+      return
     }
+    commit(turn)
+    if (getSettings().autoAnswer && isQuestion(text)) void generateAnswer(text, turns)
   })
   stream.on('error', (message) => setState({ status: 'error', error: message }))
   stream.on('close', () => {
     // A quick stop/start can leave an old stream closing after a new one started.
     if (stream !== current) return
     stream = null
+    for (const turn of [...held.keys()]) release(turn)
     getHistory()?.finish()
     if (state.status !== 'error') setState({ status: 'idle' })
   })
   stream.connect(apiKey, getSettings().listeningLanguage)
   return setState({ status: 'connecting' })
+}
+
+function commit(turn: TranscriptTurn): void {
+  turns = insertByTime(turns, turn)
+  getHistory()?.addTurn(turn)
+  broadcast(IPC.transcriptTurn, turn)
+}
+
+/** Shows a held line of mine, unless the interviewer said the same thing around then (echo). */
+function release(turn: TranscriptTurn): void {
+  const timer = held.get(turn)
+  if (!timer) return
+  clearTimeout(timer)
+  held.delete(turn)
+  if (!isEcho(turn, turns.filter((t) => t.speaker === 'interviewer'))) commit(turn)
 }
 
 export function stopSession(): SessionState {
