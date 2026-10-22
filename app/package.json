@@ -1,8 +1,13 @@
 {
   "name": "sarthi-ai",
   "version": "0.1.0",
+  "description": "Private, local-first interview copilot for Windows: live transcript and answers in an overlay hidden from screen share.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/positromen/Sarthi-AI.git"
+  },
   "private": true,
-  "description": "Sarthi AI - local-first interview copilot",
   "author": "Siddhesh Sakle",
   "main": "./out/main/index.js",
   "scripts": {

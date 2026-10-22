@@ -3,6 +3,6 @@ out/
 dist/
 *.log
 .env
-# Local-only browser preview of the renderer (fake window.sarthi); see CLAUDE.md
+# Local-only browser preview of the renderer (fake window.sarthi)
 .preview/
 .preview-serve.mjs

@@ -15,7 +15,7 @@ import { debugReport, getLog, initLog } from './log'
 import { generateNotes } from './notes'
 import { captureScreenshot, listScreenshots, removeScreenshot } from './screenshot'
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
-import { getSettings, migrateLegacySettings, updateSettings } from './store'
+import { getSettings, updateSettings } from './store'
 import { destroyTray, syncTray } from './tray'
 import { getUsage, initUsage } from './usage'
 import { validateKey } from './validate-keys'
@@ -170,7 +170,6 @@ app.whenReady().then(() => {
   initLog(join(logsDir(), 'sarthi.log'), {
     secrets: () => API_KEY_NAMES.map((name) => getKey(name)).filter((key): key is string => Boolean(key))
   })
-  migrateLegacySettings()
   // Installs that were set up before onboarding existed already have their keys: don't walk them through it again.
   const keys = getKeyStatus()
   if (!getSettings().onboarded && REQUIRED_KEYS.every((name) => keys[name])) updateSettings({ onboarded: true })

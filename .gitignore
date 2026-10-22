@@ -1,5 +1,7 @@
-# Third-party installer and unpacked artifacts (large, not ours)
-*.exe
-extracted/
-# Upstream REA clone has its own git history
-rea/
+node_modules/
+out/
+dist/
+release/
+*.log
+.env
+.env.*

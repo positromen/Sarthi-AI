@@ -1,0 +1,42 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If Sarthi became visible in a screen share, or a key leaked, please report it privately
+        instead (see SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: debug
+    attributes:
+      label: Debug info
+      description: In Sarthi, open About → Copy debug info and paste it here. API keys are removed automatically.
+      render: text
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+  - type: input
+    id: meeting
+    attributes:
+      label: Meeting or screen-share app (if relevant)
+      placeholder: Google Meet in Chrome
