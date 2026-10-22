@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SETTINGS, withDefaults } from './types'
+import { DEFAULT_SETTINGS, parseSettings, withDefaults } from './types'
 
 describe('withDefaults', () => {
   it('fills missing fields from the defaults', () => {
@@ -27,5 +27,11 @@ describe('withDefaults overlayPosition', () => {
     expect(withDefaults({ overlayPosition: { x: 10, y: 20 } }).overlayPosition).toEqual({ x: 10, y: 20 })
     expect(withDefaults({ overlayPosition: { x: 'a', y: 2 } }).overlayPosition).toBeNull()
     expect(withDefaults({}).overlayPosition).toBeNull()
+  })
+})
+
+describe('parseSettings', () => {
+  it('reads a settings file saved with a UTF-8 byte-order mark (as some Windows editors write it)', () => {
+    expect(parseSettings('﻿{"privateMode": false}').privateMode).toBe(false)
   })
 })

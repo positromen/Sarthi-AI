@@ -67,6 +67,14 @@ export const DEFAULT_SETTINGS: Settings = {
   notes: ''
 }
 
+/**
+ * Reads settings.json text. A leading byte-order mark (Notepad and PowerShell 5 add one) is ignored, so a hand-edited
+ * file doesn't silently reset every setting to the defaults.
+ */
+export function parseSettings(text: string): Settings {
+  return withDefaults(JSON.parse(text.replace(/^﻿/, '')))
+}
+
 /** Stored settings merged over the defaults, upgrading fields renamed in earlier versions. */
 export function withDefaults(stored: Record<string, unknown>): Settings {
   const { transcriptionLanguage, ...rest } = stored

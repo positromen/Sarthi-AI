@@ -62,6 +62,8 @@ export function createOverlayWindow(): BrowserWindow {
     alwaysOnTop: true,
     // Clicking the overlay must never pull focus from the meeting app; only the ask box asks for focus, briefly.
     focusable: false,
+    // No title: Chromium-based share pickers ("share a window" in Meet, Teams on the web) skip untitled windows.
+    title: '',
     // On Windows "toolbar" makes it a tool window: no taskbar button and no Alt+Tab / Win+Tab entry, both of which a
     // full-screen share would show. ("panel" is the macOS equivalent.)
     type: process.platform === 'win32' ? 'toolbar' : 'panel',
@@ -93,6 +95,8 @@ export function createOverlayWindow(): BrowserWindow {
     return { action: 'deny' }
   })
 
+  // Keep the window title empty even though overlay.html has a <title>.
+  overlay.on('page-title-updated', (event) => event.preventDefault())
   overlay.once('ready-to-show', () => overlay?.showInactive())
   loadPage(overlay, 'overlay')
   return overlay
