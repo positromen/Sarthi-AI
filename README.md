@@ -13,7 +13,9 @@ that screen sharing and recordings can't see.
 ![Electron](https://img.shields.io/badge/Electron-44-47848f.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
 
-<img src="docs/screenshots/overlay-answer.png" width="520" alt="The Sarthi overlay showing a live transcript and a streamed answer" />
+<img src="docs/demo/sarthi-demo.gif" width="860" alt="Sarthi AI demo: the shared screen shows no overlay while you see live answers, code from a screenshot, and the privacy features" />
+
+<sub>21-second demo with sample data · <a href="docs/demo/sarthi-demo.mp4">watch it in full quality with sound</a></sub>
 
 </div>
 
