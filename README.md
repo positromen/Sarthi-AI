@@ -86,8 +86,18 @@ that screen sharing and recordings can't see.
   | Anthropic (optional) | Claude answers, paid | [console.anthropic.com](https://console.anthropic.com) |
 
 ## Getting started
-Installers will be published on the [Releases](https://github.com/positromen/Sarthi-AI/releases) page. Until then,
-run it from source:
+1. Download **`Sarthi-AI-Setup-<version>.exe`** from the
+   [latest release](https://github.com/positromen/Sarthi-AI/releases/latest) and run it. It installs for your
+   Windows user only, with no admin prompt, and adds Sarthi AI to the Start menu.
+2. The beta installer is not code-signed yet, so Windows SmartScreen may say "Windows protected your PC". Choose
+   **More info → Run anyway**. Only install builds from this repository's Releases page.
+3. On first launch a short setup guide asks for your keys, checks them with each provider and tests your microphone
+   and system audio.
+
+Sarthi updates itself: new versions download in the background and install the next time you quit it.
+
+### Run from source
+You need [Node.js](https://nodejs.org) 22 or newer.
 
 ```powershell
 git clone https://github.com/positromen/Sarthi-AI.git
@@ -95,12 +105,6 @@ cd Sarthi-AI/app
 npm install
 npm run dev
 ```
-
-You need [Node.js](https://nodejs.org) 22 or newer. On first launch a short setup guide asks for your keys, checks
-them with each provider and tests your microphone and system audio.
-
-> The first beta installers are not code-signed yet, so Windows SmartScreen will say "Windows protected your PC".
-> Choose **More info → Run anyway**. Only install builds from this repository's Releases page.
 
 ## Using Sarthi
 1. Fill in **Profile** (résumé, job description, notes). You can upload .pdf, .docx, .txt or .md.
