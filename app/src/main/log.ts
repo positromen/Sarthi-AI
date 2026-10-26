@@ -5,6 +5,10 @@ import { dirname } from 'node:path'
 import type { ApiKeyStatus, LlmProvider } from '../shared/types'
 
 const REDACTED = '[redacted]'
+// Longer entries are cut: an HTTP error can carry a whole response (headers, cookies, HTML).
+const MAX_ENTRY_CHARS = 500
+// A cookie value is anything followed by a cookie attribute, as in set-cookie headers that error dumps include.
+const COOKIE = /\b([\w-]+)=[^;\s"',]+(?=;\s*(?:path|expires|domain|secure|httponly|samesite|max-age)\b)/gi
 
 // Key shapes: Google (AIza…), Groq (gsk_…), Anthropic (sk-ant-…), Deepgram (40 hex), and any auth header value.
 const PATTERNS = [
@@ -26,7 +30,7 @@ export function redact(text: string, secrets: readonly string[] = []): string {
       typeof scheme === 'string' && /^(Token|Bearer)$/.test(scheme) ? `${scheme} ${REDACTED}` : REDACTED
     )
   }
-  return out
+  return out.replace(COOKIE, `$1=${REDACTED}`)
 }
 
 export type LogLevel = 'warn' | 'error'
@@ -51,7 +55,9 @@ export class LogFile {
   }
 
   write(level: LogLevel, message: string, at = new Date()): void {
-    const line = `${at.toISOString()} ${level.toUpperCase()} ${redact(message, this.secrets()).replace(/\r?\n/g, ' ⏎ ')}\n`
+    const flat = redact(message, this.secrets()).replace(/\r?\n/g, ' ⏎ ')
+    const entry = flat.length > MAX_ENTRY_CHARS ? `${flat.slice(0, MAX_ENTRY_CHARS)}… [cut]` : flat
+    const line = `${at.toISOString()} ${level.toUpperCase()} ${entry}\n`
     try {
       mkdirSync(dirname(this.file), { recursive: true })
       if (existsSync(this.file) && statSync(this.file).size + Buffer.byteLength(line) > this.maxBytes) {

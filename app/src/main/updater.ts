@@ -11,6 +11,9 @@ export function startAutoUpdate(): void {
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.logger = null
   autoUpdater.on('update-downloaded', (info) => console.warn(`Update ${info.version} downloaded; it installs on quit.`))
-  // A failed check both emits 'error' and rejects; log it once, here.
-  autoUpdater.checkForUpdates().catch((error: Error) => console.warn('Update check failed:', error.message))
+  // A failed check both emits 'error' and rejects; log it once, here, and only its first line (the full message embeds
+  // the whole HTTP response, cookies included).
+  autoUpdater
+    .checkForUpdates()
+    .catch((error: Error) => console.warn('Update check failed:', error.message.split('\n')[0]))
 }

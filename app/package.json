@@ -1,6 +1,6 @@
 {
   "name": "sarthi-ai",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Private, local-first interview copilot for Windows: live transcript and answers in an overlay hidden from screen share.",
   "license": "MIT",
   "repository": {

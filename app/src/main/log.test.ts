@@ -34,6 +34,12 @@ describe('redact', () => {
     expect(redact('failed with my-weird-key-42 here', ['my-weird-key-42'])).toBe('failed with [redacted] here')
   })
 
+  it('hides cookie and session values that error dumps can carry', () => {
+    const out = redact('"set-cookie": [ "_gh_sess=abc123SECRET%3D%3D; path=/; HttpOnly", "_octo=GH1.1.58; expires=x" ]')
+    expect(out).not.toMatch(/abc123SECRET|GH1\.1\.58/)
+    expect(out).toContain('_gh_sess=[redacted]')
+  })
+
   it('leaves ordinary text alone', () => {
     const text = 'Deepgram closed: 1006 · gemini-3.5-flash-lite returned 503 at 2026-10-22T14:05:00Z'
     expect(redact(text)).toBe(text)
@@ -45,6 +51,14 @@ describe('LogFile', () => {
     const log = new LogFile(join(dir, 'sarthi.log'), { secrets: () => ['hunter2-key'] })
     log.write('error', 'request failed for hunter2-key', new Date('2026-10-22T08:35:00Z'))
     expect(readFileSync(join(dir, 'sarthi.log'), 'utf8')).toBe('2026-10-22T08:35:00.000Z ERROR request failed for [redacted]\n')
+  })
+
+  it('caps each entry, so one huge error dump cannot flood the log or debug info', () => {
+    const log = new LogFile(join(dir, 'sarthi.log'))
+    log.write('warn', `Update check failed: ${'x'.repeat(5000)}`)
+    const line = readFileSync(join(dir, 'sarthi.log'), 'utf8').trimEnd()
+    expect(line.length).toBeLessThan(700)
+    expect(line).toMatch(/… \[cut\]$/)
   })
 
   it('rotates to one .1 file once it passes the size cap', () => {
