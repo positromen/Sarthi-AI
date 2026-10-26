@@ -1,0 +1,39 @@
+# Windows installer: npm run dist → release/Sarthi-AI-Setup-<version>.exe
+appId: ai.sarthi.app
+productName: Sarthi AI
+copyright: Copyright © 2026 Siddhesh Sakle
+directories:
+  output: release
+  buildResources: build
+# The app is the electron-vite build plus its runtime dependencies (added by electron-builder).
+files:
+  - out/**/*
+  - package.json
+# tray.ts loads these from process.resourcesPath when packaged.
+extraResources:
+  - from: resources/
+    to: .
+    filter:
+      - tray.png
+      - tray@2x.png
+      - icon.png
+win:
+  target:
+    - target: nsis
+      arch: x64
+  icon: build/icon.ico
+# Per-user install: no admin prompt, lives in %LOCALAPPDATA%\Programs.
+nsis:
+  oneClick: true
+  perMachine: false
+  shortcutName: Sarthi AI
+  uninstallDisplayName: Sarthi AI
+  createDesktopShortcut: true
+  artifactName: Sarthi-AI-Setup-${version}.${ext}
+  deleteAppDataOnUninstall: false
+# electron-updater reads latest.yml from the GitHub release.
+publish:
+  provider: github
+  owner: positromen
+  repo: Sarthi-AI
+  releaseType: draft

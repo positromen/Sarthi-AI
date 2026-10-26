@@ -17,6 +17,7 @@ import { captureScreenshot, listScreenshots, removeScreenshot } from './screensh
 import { getSessionState, pushAudioFrame, requestManualAnswer, startSession, stopSession } from './session'
 import { getSettings, updateSettings } from './store'
 import { destroyTray, syncTray } from './tray'
+import { startAutoUpdate } from './updater'
 import { getUsage, initUsage } from './usage'
 import { validateKey } from './validate-keys'
 import {
@@ -31,6 +32,9 @@ import {
   showOverlay,
   startOverlayDrag
 } from './windows'
+
+// The installer's product name ("Sarthi AI") would move user data; keep it in one place for dev and installed builds.
+app.setPath('userData', join(app.getPath('appData'), 'sarthi-ai'))
 
 if (!app.requestSingleInstanceLock()) app.quit()
 
@@ -184,6 +188,7 @@ app.whenReady().then(() => {
   onPrivacyChange(syncTray)
   syncTray()
   openSettingsWindow()
+  startAutoUpdate()
 })
 
 app.on('will-quit', () => {

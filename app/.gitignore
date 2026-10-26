@@ -6,3 +6,4 @@ dist/
 # Local-only browser preview of the renderer (fake window.sarthi)
 .preview/
 .preview-serve.mjs
+release/
