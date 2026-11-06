@@ -7,6 +7,17 @@ Thanks for helping. Bug reports, fixes, translations and new features are all we
 - Privacy is the core promise. A change must never make Sarthi visible in a screen share, put an API key in the
   renderer or a log, or send user data anywhere except the provider the user chose.
 
+## Good first issues
+New here? These are small, self-contained and a good way to learn the codebase:
+- Show a "use headphones for best results" tip when Sarthi hears the call through your speakers
+  (`app/src/shared/transcript.ts` already detects echoed lines).
+- Add Marathi and Tamil to the answer languages (`app/src/shared/languages.ts`).
+- Remember the Control Center's window size and position, the way the overlay does
+  (`app/src/shared/overlayPosition.ts`).
+- Make the installer smaller (`pdf-parse` pulls in a large native canvas module).
+
+Comment on the matching issue, or open one, so two people don't build the same thing.
+
 ## Set up
 1. Install [Node.js](https://nodejs.org) 22 or newer on Windows 10 2004+ or Windows 11.
 2. Fork and clone the repository, then run `npm install` in `app/`.
