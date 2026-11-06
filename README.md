@@ -8,30 +8,49 @@
 It listens to the call, spots the interviewer's questions and streams a tailored answer into a small overlay
 that screen sharing and recordings can't see.
 
+[![Latest release](https://img.shields.io/github/v/release/positromen/Sarthi-AI?color=4ade80&label=release)](https://github.com/positromen/Sarthi-AI/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/positromen/Sarthi-AI/total?color=4ade80)](https://github.com/positromen/Sarthi-AI/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](LICENSE)
 ![Platform: Windows 10 2004+](https://img.shields.io/badge/platform-Windows%2010%202004%2B-0ea5e9.svg)
-![Electron](https://img.shields.io/badge/Electron-44-47848f.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6.svg)
+[![GitHub stars](https://img.shields.io/github/stars/positromen/Sarthi-AI?style=social)](https://github.com/positromen/Sarthi-AI/stargazers)
+
+### [⬇ Download for Windows](https://github.com/positromen/Sarthi-AI/releases/latest) · free · open source · no account
 
 <img src="docs/demo/sarthi-demo.gif" width="860" alt="Sarthi AI demo: the shared screen shows no overlay while you see live answers, code from a screenshot, and the privacy features" />
 
 <sub>21-second demo with sample data · <a href="docs/demo/sarthi-demo.mp4">watch it in full quality with sound</a></sub>
+
+**If Sarthi is useful to you, a ⭐ helps other people find it.**
 
 </div>
 
 > *Sarthi* (सारथी) means charioteer: the one who guides quietly from beside you.
 
 ## Contents
+- [Why Sarthi](#why-sarthi)
 - [Features](#features)
 - [How privacy works](#how-privacy-works)
 - [Requirements](#requirements)
 - [Getting started](#getting-started)
 - [Using Sarthi](#using-sarthi)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
 - [Development](#development)
 - [Architecture](#architecture)
 - [Contributing](#contributing)
 - [Use responsibly](#use-responsibly)
 - [License](#license)
+
+## Why Sarthi
+Most interview copilots are monthly subscriptions that route your call audio through their own servers. Sarthi is
+different:
+
+| | Sarthi |
+|---|---|
+| **Price** | Free. You bring your own keys, and Deepgram, Gemini and Groq all have free tiers. |
+| **Your data** | Stays on your PC. No account, no server of ours, no telemetry. |
+| **Privacy in a share** | Hidden by Windows itself, and verified with real screen captures. |
+| **Source** | Open (MIT). Read every line that touches your audio and keys. |
 
 ## Features
 - **Live transcript of both sides.** Your microphone and the call's audio are transcribed separately by Deepgram, so
@@ -126,6 +145,41 @@ npm run dev
 | Move overlay | `Ctrl+Alt+Arrows` |
 
 All except scroll and move can be changed under **Hotkeys**.
+
+## FAQ
+**Is it really invisible in a screen share?**
+Yes, on Windows 10 version 2004 and later. Windows itself leaves Sarthi's windows out of captures. We tested this by
+capturing the screen through the classic GDI path and through Chromium's screen capture (the path browser-based
+meeting apps use): with private mode on, both captures show no Sarthi; with it off, both show it. See
+[How privacy works](#how-privacy-works) for the limits.
+
+**Does it cost anything?**
+No. Sarthi is free and open source. It uses your own API keys, and the free tiers of Deepgram, Gemini and Groq are
+enough to get started. The usage meter shows what your keys have used.
+
+**Does my audio go to a Sarthi server?**
+No. There is no Sarthi server. Audio goes straight from your PC to Deepgram, and questions go to the AI provider you
+pick, using your keys.
+
+**Which answer provider should I use?**
+Groq answers in about a second. Gemini's free tier can take longer to start. Claude needs a paid Anthropic key. If
+one provider fails, Sarthi tries the next.
+
+**macOS or Linux?**
+Not yet. Sarthi relies on Windows' capture exclusion today. See the [roadmap](#roadmap).
+
+**Why does Windows warn me when I install it?**
+The beta installer isn't code-signed yet, so SmartScreen doesn't know it. Choose **More info → Run anyway**, and only
+download from this repository's Releases page.
+
+## Roadmap
+- Answer bank: prepare answers before the call so they appear instantly
+- Practice mode: Sarthi asks, you answer, and the notes grade you
+- Smaller installer
+- Code-signed installer
+- macOS support
+
+Have an idea or found a bug? [Open an issue](https://github.com/positromen/Sarthi-AI/issues/new/choose).
 
 ## Development
 All commands run in `app/`:
